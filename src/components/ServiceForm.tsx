@@ -1,0 +1,852 @@
+import React, { useState, useEffect } from 'react';
+import { ServiceType } from '../types';
+import { Pencil, Plus } from 'lucide-react';
+import { quoteAPI } from '../services/api';
+import useAuthStore from '../store/authStore';
+import { toast } from 'react-toastify';
+import { formatDate } from '../utils/string';
+
+declare global {
+  interface Window {
+    google: {
+      maps: {
+        places: {
+          Autocomplete: new (
+            input: HTMLInputElement,
+            options?: google.maps.places.AutocompleteOptions
+          ) => google.maps.places.Autocomplete;
+        };
+        event: {
+          clearInstanceListeners: (instance: unknown) => void;
+        };
+      };
+    };
+  }
+}
+
+interface ClientInfo {
+  firstName: string;
+  lastName: string;
+  address: string;
+  city: string;
+  province: string;
+  postalCode: string;
+  phoneNumber: string;
+  otherPhone: string;
+  email: string;
+  notes: string;
+}
+
+interface CalculationRow {
+  serviceType: ServiceType;
+  units: number;
+  rate?: number;
+  subtotal?: number;
+  setupMinutes?: number;
+  perUnitMinutes?: number;
+  hourlyCrewCharge?: number;
+  numberOfPersons?: number;
+  totalTimeMinutes?: number;
+  totalTimeHours?: number;
+  calendarSlotHours?: number;
+  totalCost?: number;
+}
+
+export default function CalculatorView() {
+  const { user } = useAuthStore();
+  const [caluculationLoading, setCaluculationLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [clientInfo, setClientInfo] = useState<ClientInfo>({
+    firstName: '',
+    lastName: '',
+    address: '',
+    city: '',
+    province: '',
+    postalCode: '',
+    phoneNumber: '',
+    otherPhone: '',
+    email: '',
+    notes: '',
+  });
+  const [calculations, setCalculations] = useState<CalculationRow[]>([]);
+  const [discountType, setDiscountType] = useState<'FLAT' | 'PERCENTAGE'>('FLAT');
+  const [discountValue, setDiscountValue] = useState(0);
+
+  const [currentCalculation, setCurrentCalculation] = useState({
+    serviceType: ServiceType.EXTERIOR_WINDOW_CLEANING,
+    units: 1,
+  });
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isDiscountDropdownOpen, setIsDiscountDropdownOpen] = useState(false);
+  const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({});
+
+  const toggleDiscountDropdown = () => {
+    setIsDiscountDropdownOpen(!isDiscountDropdownOpen);
+  };
+
+  // Add Google Places Autocomplete
+  useEffect(() => {
+    let autocomplete: google.maps.places.Autocomplete | null = null;
+    let script: HTMLScriptElement | null = null;
+    let isScriptLoaded = false;
+
+    const initializeAutocomplete = () => {
+      // Wait for the next tick to ensure the input is rendered
+      setTimeout(() => {
+        const input = document.getElementById('address-input') as HTMLInputElement;
+        if (!input) return;
+
+        // Check if Google Maps API is fully loaded
+        if (!window.google?.maps?.places?.Autocomplete) {
+          console.warn('Google Maps API not fully loaded yet');
+          return;
+        }
+
+        try {
+          // Only initialize if not already initialized
+          if (!autocomplete) {
+            autocomplete = new window.google.maps.places.Autocomplete(input, {
+              types: ['address'],
+              componentRestrictions: { country: 'ca' },
+              fields: ['address_components', 'formatted_address'],
+            });
+
+            // Prevent form submission on enter
+            input.addEventListener('keydown', (e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+              }
+            });
+
+            autocomplete.addListener('place_changed', () => {
+              const place = autocomplete?.getPlace();
+
+              if (!place?.address_components) {
+                console.warn('No address components found in selected place');
+                return;
+              }
+
+              let streetNumber = '';
+              let streetName = '';
+              let city = '';
+              let province = '';
+              let postalCode = '';
+
+              // Log all address components for debugging
+              // console.log('Address components:', place.address_components);
+
+              for (const component of place.address_components) {
+                const types = component.types;
+                // console.log('Component:', component.long_name, 'Types:', types);
+
+                if (types.includes('street_number')) {
+                  streetNumber = component.long_name;
+                }
+                if (types.includes('route')) {
+                  streetName = component.long_name;
+                }
+                if (types.includes('locality')) {
+                  city = component.long_name;
+                }
+                if (types.includes('administrative_area_level_1')) {
+                  province = component.short_name;
+                }
+                if (types.includes('postal_code')) {
+                  postalCode = component.long_name;
+                }
+              }
+
+              const updatedClientInfo = {
+                ...clientInfo,
+                address: `${streetNumber} ${streetName}`.trim(),
+                city,
+                province,
+                postalCode,
+              };
+
+              // console.log('Updated client info:', updatedClientInfo);
+              setClientInfo(updatedClientInfo);
+            });
+          }
+        } catch (error) {
+          console.error('Error initializing Google Places Autocomplete:', error);
+        }
+      }, 0);
+    };
+
+    const loadGoogleMapsScript = () => {
+      // Check if script is already loaded
+      if (document.querySelector('script[src*="maps.googleapis.com"]')) {
+        isScriptLoaded = true;
+        // Add a small delay to ensure Google Maps API is fully initialized
+        setTimeout(initializeAutocomplete, 100);
+        return;
+      }
+
+      // Check if script is already being loaded
+      if (isScriptLoaded) return;
+
+      // Create a promise to handle script loading
+      const loadScript = new Promise<void>((resolve, reject) => {
+        script = document.createElement('script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${
+          import.meta.env.VITE_GOOGLE_MAPS_API_KEY
+        }&libraries=places&loading=async`;
+        script.async = true;
+        script.defer = true;
+
+        script.addEventListener('load', () => {
+          isScriptLoaded = true;
+          // Add a small delay to ensure Google Maps API is fully initialized
+          setTimeout(() => {
+            resolve();
+          }, 100);
+        });
+
+        script.addEventListener('error', (error) => {
+          console.error('Error loading Google Maps script:', error);
+          isScriptLoaded = false;
+          reject(error);
+        });
+
+        document.head.appendChild(script);
+      });
+
+      // Initialize autocomplete after script loads
+      loadScript
+        .then(() => {
+          initializeAutocomplete();
+        })
+        .catch((error) => {
+          console.error('Failed to load Google Maps script:', error);
+        });
+    };
+
+    loadGoogleMapsScript();
+
+    return () => {
+      if (autocomplete) {
+        google.maps.event.clearInstanceListeners(autocomplete);
+        autocomplete = null;
+      }
+    };
+  }, []); // Add showClientDialog as a dependency
+
+  const formatCurrency = (amount: number) => {
+    return amount.toLocaleString();
+  };
+
+  const handleEditService = (index: number) => {
+    setCurrentCalculation(calculations[index]);
+    setEditingIndex(index);
+    setIsEditing(true);
+  };
+
+  const handleCalculationSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const selectServices = [
+      {
+        ...currentCalculation,
+        serviceType: currentCalculation.serviceType,
+        units: currentCalculation.units,
+      },
+    ];
+
+    // Check if service type already exists (when not editing)
+    if (
+      !isEditing &&
+      calculations.some((calc) => calc.serviceType === currentCalculation.serviceType)
+    ) {
+      toast.error('This service type already exists. Please edit the existing one.');
+      return;
+    }
+
+    setCaluculationLoading(true);
+    try {
+      const result = await quoteAPI.calculate(selectServices);
+      // console.log('Calculation result:', result);
+      const newRow: CalculationRow = {
+        ...result,
+        serviceType: currentCalculation.serviceType,
+        units: currentCalculation.units,
+        subtotal: result.data.services[0].totalCost,
+        rate: result.data.services[0].hourlyCrewCharge,
+      };
+
+      if (isEditing && editingIndex !== null) {
+        // Update existing service
+        const updatedCalculations = [...calculations];
+        updatedCalculations[editingIndex] = newRow;
+        setCalculations(updatedCalculations);
+      } else {
+        // Add new service
+        setCalculations([...calculations, newRow]);
+      }
+      setIsEditing(false);
+      setEditingIndex(null);
+      setCurrentCalculation({
+        serviceType: ServiceType.EXTERIOR_WINDOW_CLEANING,
+        units: 1,
+      });
+    } catch (error) {
+      console.error('Failed to calculate service:', error);
+    } finally {
+      setCaluculationLoading(false);
+    }
+  };
+
+  // Add validation function
+  const validateForm = (): { isValid: boolean; errors: string[] } => {
+    const errors: string[] = [];
+
+    // Required client info fields
+    if (!clientInfo.firstName.trim()) errors.push('First Name is required');
+    if (!clientInfo.address.trim()) errors.push('Address is required');
+    if (!clientInfo.city.trim()) errors.push('City is required');
+    if (!clientInfo.province.trim()) errors.push('Province is required');
+    if (!clientInfo.postalCode.trim()) errors.push('Postal Code is required');
+    if (!clientInfo.phoneNumber.trim()) errors.push('Phone Number is required');
+    if (clientInfo.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clientInfo.email)) {
+      errors.push('Please enter a valid email address');
+    }
+
+    // Check if at least one service is added
+    if (calculations.length === 0) {
+      errors.push('At least one service must be added');
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+    };
+  };
+
+  const handleDeleteService = (index: number) => {
+    const updatedCalculations = calculations.filter((_, i) => i !== index);
+    setCalculations(updatedCalculations);
+  };
+
+  const subtotal = calculations.reduce((sum, calc) => sum + (calc.subtotal ?? 0), 0);
+  const discount = discountType === 'FLAT' ? discountValue : (subtotal * discountValue) / 100;
+  const tax = (subtotal - discount) * 0.13;
+  const total = subtotal - discount + tax;
+
+  const submitQuoteData = async () => {
+    // Mark all fields as touched
+    setTouchedFields({
+      firstName: true,
+      address: true,
+      city: true,
+      province: true,
+      postalCode: true,
+      phoneNumber: true,
+      email: true,
+    });
+
+    const validation = validateForm();
+
+    if (!validation.isValid) {
+      // Show all validation errors
+      validation.errors.forEach((error) => {
+        toast.error(error);
+      });
+      return;
+    }
+
+    const quoteData = {
+      userId: user?.id,
+      subtotal: subtotal,
+      taxValue: tax,
+      total: total,
+      services: calculations,
+      discount: {
+        flat: discount,
+        percentage: discountValue,
+      },
+      clientInfo: {
+        firstName: clientInfo.firstName,
+        lastName: clientInfo.lastName,
+        address: clientInfo.address,
+        city: clientInfo.city,
+        province: clientInfo.province,
+        postalCode: clientInfo.postalCode,
+        phoneNumber: clientInfo.phoneNumber,
+        otherPhone: clientInfo.otherPhone,
+        email: clientInfo.email,
+        notes: clientInfo.notes,
+      },
+    };
+    setIsLoading(true);
+    // console.log('Quote data:', quoteData);
+    try {
+      const response = await quoteAPI.create(quoteData);
+      console.log('Quote submitted successfully:', response);
+      toast.success('Submit Success!');
+    } catch (error) {
+      console.error('Failed to submit quote:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const toggleDropdown = () => {
+    setIsDropdownOpen(!isDropdownOpen);
+  };
+
+  // Update the requiredFieldClass function to consider touched state
+  const getInputClassName = (fieldName: string, value: string) => {
+    const isTouched = touchedFields[fieldName];
+    const isEmpty = !value.trim();
+    const isInvalid = isTouched && isEmpty;
+
+    return `block w-full rounded border ${
+      isInvalid ? 'border-red-300 bg-red-50' : 'border-gray-300'
+    } px-3 py-2 text-sm focus:outline-none focus:ring-1 ${
+      isInvalid ? 'focus:ring-red-500 focus:border-red-500' : 'focus:ring-purple-500'
+    }`;
+  };
+
+  return (
+    <div className="max-w-md mx-auto">
+      <div className="px-2 flex flex-col gap-3">
+        {/* Header Card */}
+        <div className="bg-white shadow-sm p-4 rounded">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-md font-semibold">SHS QUOTE</h1>
+            </div>
+            <div>
+              <p className="text-gray-500 text-sm">{formatDate(new Date())}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Info Card */}
+        <div className="bg-white shadow-sm px-4 py-6 rounded">
+          <div className="flex justify-between items-center mb-2">
+            <p className="text-xs text-gray-500 mb-1">Client INFO</p>
+          </div>
+          {/* Client Information Form */}
+          <div className="space-y-5 border-t border-gray-200 pt-3">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">First Name*</label>
+                <input
+                  type="text"
+                  value={clientInfo.firstName}
+                  onChange={(e) => setClientInfo({ ...clientInfo, firstName: e.target.value })}
+                  className={getInputClassName('firstName', clientInfo.firstName)}
+                  placeholder="Enter first name"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Last Name</label>
+                <input
+                  type="text"
+                  value={clientInfo.lastName}
+                  onChange={(e) => setClientInfo({ ...clientInfo, lastName: e.target.value })}
+                  className="block w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                  placeholder="Enter last name"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Address*</label>
+              <input
+                id="address-input"
+                type="text"
+                value={clientInfo.address}
+                onChange={(e) => setClientInfo({ ...clientInfo, address: e.target.value })}
+                className={getInputClassName('firstName', clientInfo.address)}
+                placeholder="Start typing to search address..."
+              />
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">City*</label>
+                <input
+                  type="text"
+                  value={clientInfo.city}
+                  onChange={(e) => setClientInfo({ ...clientInfo, city: e.target.value })}
+                  className={getInputClassName('firstName', clientInfo.city)}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Province*</label>
+                <input
+                  type="text"
+                  value={clientInfo.province}
+                  onChange={(e) => setClientInfo({ ...clientInfo, province: e.target.value })}
+                  className={getInputClassName('firstName', clientInfo.province)}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Postal Code*</label>
+                <input
+                  type="text"
+                  value={clientInfo.postalCode}
+                  onChange={(e) => setClientInfo({ ...clientInfo, postalCode: e.target.value })}
+                  className={getInputClassName('firstName', clientInfo.postalCode)}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">
+                  Phone Number*
+                </label>
+                <input
+                  type="tel"
+                  value={clientInfo.phoneNumber}
+                  onChange={(e) => setClientInfo({ ...clientInfo, phoneNumber: e.target.value })}
+                  className={getInputClassName('firstName', clientInfo.phoneNumber)}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Other Phone</label>
+                <input
+                  type="tel"
+                  value={clientInfo.otherPhone}
+                  onChange={(e) => setClientInfo({ ...clientInfo, otherPhone: e.target.value })}
+                  className="block w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Email*</label>
+              <input
+                type="email"
+                value={clientInfo.email}
+                onChange={(e) => setClientInfo({ ...clientInfo, email: e.target.value })}
+                className={getInputClassName('firstName', clientInfo.email)}
+              />
+            </div>
+          </div>
+          {/* )} */}
+        </div>
+
+        {/* Invoice Items Card */}
+        <div className="bg-white shadow-sm px-4 py-6 rounded">
+          <div className="flex justify-between items-center mb-2">
+            <p className="text-xs text-gray-500 mb-1">SERVICES</p>
+          </div>
+
+          {/* Service Input Fields - Always visible */}
+          <div className="border-t border-gray-200 pt-4 mb-4">
+            <form onSubmit={handleCalculationSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Service Type</label>
+                <div className="relative">
+                  <div className="relative cursor-pointer" onClick={toggleDropdown}>
+                    <div className="block w-full rounded border border-gray-300 px-3 py-2 text-sm flex items-center justify-between">
+                      <span>
+                        {currentCalculation.serviceType
+                          .replace(/_/g, ' ')
+                          .toLowerCase()
+                          .replace(/^\w/, (c) => c.toUpperCase())}
+                      </span>
+                      <svg
+                        className="h-5 w-5 text-purple-600"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    </div>
+
+                    {isDropdownOpen && (
+                      <div className="absolute z-10 w-full mt-1 bg-white rounded-lg shadow-lg py-1 overflow-auto max-h-56">
+                        {Object.values(ServiceType).map((type) => (
+                          <div
+                            key={type}
+                            className={`px-4 py-2 cursor-pointer hover:bg-purple-50 transition-colors ${
+                              currentCalculation.serviceType === type
+                                ? 'bg-purple-100 font-medium'
+                                : ''
+                            }`}
+                            onClick={() => {
+                              setCurrentCalculation({ ...currentCalculation, serviceType: type });
+                              setIsDropdownOpen(false);
+                            }}
+                          >
+                            {type
+                              .replace(/_/g, ' ')
+                              .toLowerCase()
+                              .replace(/^\w/, (c) => c.toUpperCase())}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Units</label>
+                <div className="relative">
+                  {/* <span className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+                    <span className="text-gray-500">#</span>
+                  </span> */}
+                  <input
+                    type="number"
+                    value={currentCalculation.units}
+                    onChange={(e) =>
+                      setCurrentCalculation({
+                        ...currentCalculation,
+                        units: Number(e.target.value),
+                      })
+                    }
+                    className="block w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                    min="1"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end">
+                <button
+                  type="submit"
+                  disabled={caluculationLoading}
+                  className="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded flex items-center
+            focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors
+            disabled:bg-purple-300 disabled:cursor-not-allowed text-sm"
+                >
+                  {isEditing ? <Pencil size={18} /> : <Plus size={18} />}
+
+                  {caluculationLoading ? 'Adding...' : ''}
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <div className="w-full">
+            {calculations.length === 0 ? (
+              <div className="flex flex-col items-center justify-center pb-4">
+                <p className="text-gray-500 text-md">No services added yet.</p>
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-12 text-xs text-gray-500 mb-2 border-t border-gray-200 pt-3">
+                  <div className="col-span-4">DESCRIPTION</div>
+                  <div className="col-span-2 text-right">QTY</div>
+                  <div className="col-span-3 text-right">SUBTOTAL</div>
+                  <div className="col-span-3 text-right">Action</div>
+                </div>
+                {calculations.map((calc, index) => (
+                  <div key={index} className="grid grid-cols-12 text-sm py-2 group">
+                    <div className="col-span-4 line-clamp-2">
+                      {calc.serviceType.replace(/_/g, ' ')}
+                    </div>
+                    <div className="col-span-2 text-right">{calc.units}</div>
+                    <div className="col-span-3 text-right">
+                      ${formatCurrency(calc.subtotal || 0)}
+                    </div>
+                    <div className="col-span-3 flex items-start justify-end gap-2">
+                      <button
+                        onClick={() => handleEditService(index)}
+                        className="transition-opacity p-1 hover:bg-gray-100 rounded"
+                        title="Edit Service"
+                      >
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="text-purple-500 hover:text-purple-700"
+                        >
+                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                      </button>
+                      <button
+                        onClick={() => handleDeleteService(index)}
+                        className="transition-opacity p-1 hover:bg-gray-100 rounded"
+                        title="Delete Service"
+                      >
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          <path d="M3 6h18"></path>
+                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                          <line x1="10" y1="11" x2="10" y2="17"></line>
+                          <line x1="14" y1="11" x2="14" y2="17"></line>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </>
+            )}
+          </div>
+        </div>
+        {/* add discount */}
+        <div className="bg-white shadow-sm px-4 py-6 rounded">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-gray-500 mb-1">Discount</p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 border-t border-gray-200 py-4">
+              <div>
+                <div className="relative">
+                  <div className="relative cursor-pointer" onClick={toggleDiscountDropdown}>
+                    <div className="block w-full rounded border border-gray-300 px-2 py-1.5 text-sm flex items-center justify-between">
+                      <span>{discountType === 'FLAT' ? 'Flat Amount' : 'Percentage'}</span>
+                      <svg
+                        className="h-5 w-5 text-purple-600"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    </div>
+
+                    {isDiscountDropdownOpen && (
+                      <div className="absolute z-10 w-full mt-1 bg-white rounded-lg shadow-lg py-1 overflow-auto max-h-56">
+                        <div
+                          className={`px-4 py-2 cursor-pointer hover:bg-purple-50 transition-colors ${
+                            discountType === 'FLAT' ? 'bg-purple-100 font-medium' : ''
+                          }`}
+                          onClick={() => {
+                            setDiscountType('FLAT');
+                            setIsDiscountDropdownOpen(false);
+                          }}
+                        >
+                          Flat Amount
+                        </div>
+                        <div
+                          className={`px-4 py-2 cursor-pointer hover:bg-purple-50 transition-colors ${
+                            discountType === 'PERCENTAGE' ? 'bg-purple-100 font-medium' : ''
+                          }`}
+                          onClick={() => {
+                            setDiscountType('PERCENTAGE');
+                            setIsDiscountDropdownOpen(false);
+                          }}
+                        >
+                          Percentage
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div className="relative">
+                <input
+                  type="number"
+                  value={discountValue}
+                  onChange={(e) => setDiscountValue(Number(e.target.value))}
+                  className="block w-full rounded border border-gray-300 px-2 py-1.5 text-sm"
+                  placeholder={discountType === 'FLAT' ? 'Amount' : 'Percentage'}
+                />
+                {discountType === 'PERCENTAGE' && (
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500">%</span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+        {/* Signature Card */}
+        <div className="bg-white shadow-sm px-4 py-6 rounded">
+          <div className="flex flex-col gap-2">
+            <div className="flex justify-between">
+              <p className="text-xs text-gray-500 mb-1">Add Notes</p>
+            </div>
+
+            {/* {clientInfo.notes ? ( */}
+            <div className="border-t border-gray-200 pt-4">
+              <p className="text-xs text-gray-500 mb-1">Notes</p>
+              <textarea
+                value={clientInfo.notes}
+                onChange={(e) => setClientInfo({ ...clientInfo, notes: e.target.value })}
+                className="mt-1 block w-full rounded border border-gray-300 px-3 py-2"
+                rows={3}
+              />
+            </div>
+          </div>
+        </div>
+        <div className="bg-white shadow-sm px-4 py-6 rounded">
+          {/* Summary */}
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span>Subtotal</span>
+              <span>${formatCurrency(subtotal)}</span>
+            </div>
+            {/* <div className="flex justify-between text-sm">
+              <div className="flex items-center">
+                <span>Discount</span>
+                {discountValue !== 0 && (
+                  <span className="ml-1 bg-purple-100 text-purple-800 text-xs px-1 rounded">
+                    {discountType === 'PERCENTAGE' && `${discountValue}%`}
+                  </span>
+                )}
+              </div>
+              <span>${formatCurrency(discount)}</span>
+            </div> */}
+            {/* Discount Form Section */}
+            <div className="flex justify-between py-2 text-sm">
+              <span>Discount</span>
+              <span>${formatCurrency(discount)}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span>
+                TAX
+                <span className="ml-2 bg-purple-100 text-purple-800 text-xs p-1 rounded">13%</span>
+              </span>
+              <span>${formatCurrency(tax)}</span>
+            </div>
+            <div className="flex justify-between py-2 font-semibold text-sm text-gray-800 border-t border-gray-200 mt-2">
+              <span>GRAND TOTAL</span>
+              <span>$ {formatCurrency(total)}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer Card */}
+        <div className="bg-white rounded-sm shadow-sm p-4 rounded md:relative fixed bottom-0 left-0 right-0">
+          <div className="flex justify-between items-center">
+            <div>
+              <p className="text-xl font-bold">${formatCurrency(total)}</p>
+              <p className="text-xs text-gray-500">Total Amount</p>
+            </div>
+            <button
+              disabled={isLoading}
+              className="bg-purple-600 text-white py-2 px-5 rounded font-medium text-sm"
+              onClick={() => submitQuoteData()}
+            >
+              {isLoading ? 'Submit...' : 'Submit'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
