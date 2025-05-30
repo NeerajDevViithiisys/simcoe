@@ -27,7 +27,7 @@ export const LoginView = () => {
       toast.success('Login successful!');
       if (window.innerWidth < 640) {
         // sm breakpoint in Tailwind
-        navigate('/mobile-menu');
+        navigate('/menu-links');
       } else {
         navigate('/');
       }

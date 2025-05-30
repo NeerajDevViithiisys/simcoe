@@ -11,7 +11,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import useAuthStore from './store/authStore';
 import { Quotes } from './views/Quotes';
 import 'react-toastify/dist/ReactToastify.css';
-import MobileMenu from './components/mobileMenu';
+import { MobileMenuLinks } from './views/mobile-links';
 
 const App = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -142,6 +142,7 @@ const App = () => {
               className={`sidebar fixed top-0 right-0 h-full w-64 bg-white shadow-lg z-50 transform transition-transform duration-300 ease-in-out ${
                 isMenuOpen ? 'translate-x-0' : 'translate-x-full'
               }`}
+              style={{ display: isMenuOpen ? 'block' : 'none' }}
             >
               <div className="flex items-center justify-between p-4 border-b border-gray-200">
                 <span className="font-semibold text-lg text-gray-800">Menu</span>
@@ -242,11 +243,12 @@ const App = () => {
                 </ProtectedRoute>
               }
             />
+
             <Route
-              path="/mobile-menu"
+              path="/menu-links"
               element={
-                <ProtectedRoute>
-                  <MobileMenu />
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <MobileMenuLinks />
                 </ProtectedRoute>
               }
             />
