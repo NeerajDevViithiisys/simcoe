@@ -25,7 +25,12 @@ export const LoginView = () => {
 
       setAuth(response.data, response.data.token);
       toast.success('Login successful!');
-      navigate('/');
+      if (window.innerWidth < 640) {
+        // sm breakpoint in Tailwind
+        navigate('/mobile-menu');
+      } else {
+        navigate('/');
+      }
     } catch (error) {
       // Error is already handled by the API interceptor
       console.error('Login error details:', error);

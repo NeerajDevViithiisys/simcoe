@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Calculator, Users, Home, LogOut, Sparkles } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
+
+// Mock auth store for demo
 
 export default function MobileMenu() {
   const { user } = useAuthStore();
   const [mounted, setMounted] = useState(false);
-  console.log({ user });
+  const navigate = useNavigate();
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -18,7 +22,7 @@ export default function MobileMenu() {
   };
 
   const menuItems = [
-    { icon: Calculator, label: 'Calculator', path: '/calculator' },
+    { icon: Calculator, label: 'Calculator', path: '/' },
     { icon: Home, label: 'Quotes', path: '/quotes' },
     ...(user?.role === 'admin' ? [{ icon: Users, label: 'Users', path: '/users' }] : []),
   ];
@@ -38,22 +42,20 @@ export default function MobileMenu() {
               <p className="text-gray-600 text-lg">{getGreeting()},</p>
             </div>
             <h1 className="text-4xl font-bold text-gray-900 mb-2">{user?.name}</h1>
-            {/* <p className="text-gray-600 text-sm px-3 py-1 bg-gray-100 rounded-full inline-block border border-gray-200">
-              Role: {user?.role}
-            </p> */}
           </div>
 
           {/* Menu Items */}
           <div className="space-y-4 mb-8">
             {menuItems.map((item, index) => (
-              <div
+              <Link
                 key={item.label}
+                to={item.path}
                 className={`transform transition-all duration-700 ${
                   mounted ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-10'
                 }`}
                 style={{ transitionDelay: `${index * 150}ms` }}
               >
-                <button className="w-full group relative overflow-hidden">
+                <button className="w-full group relative overflow-hidden mb-3">
                   <div className="relative flex items-center p-3 bg-gray-50 rounded-2xl border border-gray-200 hover:bg-gray-100 hover:shadow-lg transition-all duration-300 hover:scale-105 group">
                     <div className="p-3 rounded-xl bg-[#C49C3C] shadow-lg group-hover:scale-110 transition-transform duration-300">
                       <item.icon className="h-6 w-6 text-white" />
@@ -66,7 +68,7 @@ export default function MobileMenu() {
                     </div>
                   </div>
                 </button>
-              </div>
+              </Link>
             ))}
           </div>
 
@@ -77,11 +79,14 @@ export default function MobileMenu() {
             }`}
             style={{ transitionDelay: '600ms' }}
           >
-            <button className="w-full group relative overflow-hidden">
-              <div
-                className="relative flex items-center p-3 bg-red-50 rounded-2xl border border-red-200 hover:bg-red-100 hover:shadow-lg transition-all duration-300 hover:scale-105 group"
-                onClick={() => useAuthStore.getState().logout()}
-              >
+            <button
+              className="w-full group relative overflow-hidden"
+              onClick={() => {
+                useAuthStore.getState().logout();
+                navigate('/login');
+              }}
+            >
+              <div className="relative flex items-center p-3 bg-red-50 rounded-2xl border border-red-200 hover:bg-red-100 hover:shadow-lg transition-all duration-300 hover:scale-105 group">
                 <div className="p-3 rounded-xl bg-red-500 shadow-lg group-hover:scale-110 transition-transform duration-300">
                   <LogOut className="h-6 w-6 text-white" />
                 </div>

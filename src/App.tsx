@@ -11,6 +11,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import useAuthStore from './store/authStore';
 import { Quotes } from './views/Quotes';
 import 'react-toastify/dist/ReactToastify.css';
+import MobileMenu from './components/mobileMenu';
 
 const App = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -238,6 +239,14 @@ const App = () => {
               element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <QuotesView />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/mobile-menu"
+              element={
+                <ProtectedRoute>
+                  <MobileMenu />
                 </ProtectedRoute>
               }
             />
