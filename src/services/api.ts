@@ -147,6 +147,10 @@ export const quoteAPI = {
     const response = await api.get(`/quote/${id}`);
     return response.data;
   },
+  updateQuote: async (id: string, quoteData: any) => {
+    const response = await api.put(`/quote/update/${id}`, quoteData);
+    return response.data;
+  },
   deleteQuote: async (id: string) => {
     const response = await api.delete(`/quote/${id}`);
     return response.data;

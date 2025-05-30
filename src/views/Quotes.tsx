@@ -6,21 +6,34 @@ import { params } from '../types';
 import { toast } from 'react-toastify';
 import { formatDateData } from '../utils/string';
 import { useNavigate } from 'react-router-dom';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 interface Quote {
   id: string;
   services: {
     serviceType: ServiceType;
     units: number;
+    id: string;
+    total: number;
+    invoice: string;
   }[];
   clientInfo: {
     firstName: string;
     lastName: string;
     phoneNumber: string;
     address: string;
+    email: string;
+    notes: string;
+    city: string;
+    province: string;
+    postalCode: string;
+    otherPhone: string;
   };
   user: {
     name: string;
+    email: string;
+    phoneNumber: string;
   };
   units: number;
   taxValue: number;
@@ -28,7 +41,9 @@ interface Quote {
   perUnitMinutes: number;
   total: number;
   subtotal: number;
-  discount: number;
+  discount: {
+    flat: number;
+  };
   numberOfPersons: number;
   status?: QuoteStatus;
   createdAt: Date;
@@ -143,7 +158,11 @@ export const Quotes = () => {
   const handleEdituote = (quote: Quote) => {
     console.log('Viewing quote:', quote);
     localStorage.setItem('selectedQuote', JSON.stringify(quote));
-    navigate(`/${quote.id}`);
+    navigate('/', {
+      state: {
+        id: quote.id,
+      },
+    });
   };
 
   // Handle delete dialog open
@@ -197,6 +216,129 @@ export const Quotes = () => {
   useEffect(() => {
     getQuotes(page, ITEMS_PER_PAGE);
   }, [searchTerm, selectedUser]);
+
+  const handleDownloadPDF = async (quote: Quote) => {
+    try {
+      // Create a temporary container
+      const tempDiv = document.createElement('div');
+      tempDiv.style.position = 'absolute';
+      tempDiv.style.left = '-9999px';
+      tempDiv.style.background = 'white';
+      document.body.appendChild(tempDiv);
+
+      // Add content to the temporary container
+      tempDiv.innerHTML = `
+        <div class="max-w-3xl mx-auto bg-white">
+          <div class="bg-[#C49C3C] p-4 text-white">
+            <h1 class="text-xl font-bold">Quote</h1>
+          </div>
+          
+          <div class="border-b p-4">
+            <div class="flex justify-between">
+              <div>
+                <h2 class="text-sm text-gray-500">Quote ID</h2>
+                <p class="text-sm font-medium">${quote.invoice}</p>
+              </div>
+              <div class="text-right">
+                <h2 class="text-sm text-gray-500">Date Issued</h2>
+                <p class="text-sm font-medium">${new Date(quote.createdAt).toLocaleDateString()}</p>
+              </div>
+            </div>
+          </div>
+  
+          <div class="p-4 border-b">
+            <div class="grid grid-cols-2">
+              <div>
+                <h2 class="text-sm text-gray-500 mb-2">Bill To:</h2>
+                <p class="text-sm font-medium">
+                  ${quote.clientInfo.firstName} ${quote.clientInfo.lastName}
+                </p>
+                <p class="text-sm">Phone: ${quote.clientInfo.phoneNumber}</p>
+                <p class="text-sm">Email: ${quote.clientInfo.email || ''}</p>
+                <p class="text-sm">Address: ${quote.clientInfo.address}</p>
+              </div>
+              <div class="text-right">
+                <h2 class="text-sm text-gray-500 mb-2">From:</h2>
+                <p class="text-sm font-medium">${quote.user.name}</p>
+                <p class="text-sm">Phone: ${quote.user.phoneNumber}</p>
+                <p class="text-sm">Email: ${quote.user.email}</p>
+              </div>
+            </div>
+          </div>
+  
+          <div class="p-4">
+            <table class="w-full">
+              <thead>
+                <tr class="bg-gray-50">
+                  <th class="text-left p-2">Service Type</th>
+                  <th class="text-left p-2">QTY</th>
+                  <th class="text-right p-2">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${quote.services
+                  .map(
+                    (service) => `
+                  <tr>
+                    <td class="p-2">${service.serviceType.replace(/_/g, ' ')}</td>
+                    <td class="p-2">${service.units}</td>
+                    <td class="p-2 text-right">$${service.total.toFixed(2)}</td>
+                  </tr>
+                `
+                  )
+                  .join('')}
+              </tbody>
+            </table>
+          </div>
+  
+          <div class="p-4 bg-gray-50">
+            <div class="max-w-xs ml-auto">
+              <div class="flex justify-between py-2">
+                <span class="text-sm text-gray-500">Subtotal</span>
+                <span class="text-sm font-medium">$${quote.subtotal.toFixed(2)}</span>
+              </div>
+              <div class="flex justify-between py-2">
+                <span class="text-sm text-gray-500">Discount</span>
+                <span class="text-sm font-medium">-$${quote.discount.flat.toFixed(2)}</span>
+              </div>
+              <div class="flex justify-between py-2">
+                <span class="text-sm text-gray-500">Tax</span>
+                <span class="text-sm font-medium">$${quote.taxValue.toFixed(2)}</span>
+              </div>
+              <div class="flex justify-between py-2 border-t mt-2">
+                <span class="font-medium">Total</span>
+                <span class="font-bold">$${quote.total.toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Generate PDF
+      const canvas = await html2canvas(tempDiv, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+      });
+
+      const imgWidth = 208; // A4 width in mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, imgWidth, imgHeight);
+
+      // Cleanup
+      document.body.removeChild(tempDiv);
+
+      // Save PDF
+      const fileName = `quote-${quote.id}-${new Date().toISOString().split('T')[0]}.pdf`;
+      pdf.save(fileName);
+    } catch (error) {
+      console.error('Failed to generate PDF:', error);
+      toast.error('Failed to generate PDF');
+    }
+  };
 
   return (
     <div className="px-2">
@@ -341,8 +483,8 @@ export const Quotes = () => {
                           <Pencil className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => handleViewQuote(quote)}
-                          className="flex items-center px-3 py-1 bg-[#C49C3C] text-white text-sm font-medium rounded  transition-colors duration-200"
+                          onClick={() => handleDownloadPDF(quote)}
+                          className="flex items-center px-3 py-1 bg-[#C49C3C] text-white text-sm font-medium rounded transition-colors duration-200"
                         >
                           <Download className="w-4 h-4" />
                         </button>

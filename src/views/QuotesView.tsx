@@ -58,6 +58,7 @@ export const QuotesView = () => {
   const [error, setError] = useState<string | null>(null);
   const contentRef = useRef<HTMLDivElement>(null); // Add this line
   const [isPdfGenerating, setIsPdfGenerating] = useState(false);
+  const [isPdfMode, setIsPdfMode] = useState(false);
 
   useEffect(() => {
     const fetchQuote = async () => {
@@ -120,6 +121,11 @@ export const QuotesView = () => {
         button.setAttribute('disabled', 'true');
       }
 
+      setIsPdfMode(true); // Set PDF mode before generating
+
+      // Wait for re-render with hidden elements
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
       const content = contentRef.current;
       const canvas = await html2canvas(content, {
         scale: 2,
@@ -143,6 +149,7 @@ export const QuotesView = () => {
       console.error('Failed to generate PDF:', error);
     } finally {
       setIsPdfGenerating(false);
+      setIsPdfMode(false); // Reset PDF mode after generating
       // Reset button state
       const button = document.querySelector('.download-button');
       if (button) {
@@ -159,15 +166,17 @@ export const QuotesView = () => {
         <div className="md:px-6 px-4 py-4 bg-[#C49C3C]">
           <div className="flex justify-between items-center">
             <h1 className="text-xl font-bold text-white">Quote</h1>
-            <span
-              className={`px-4 cursor-pointer py-1 bg-white text-[#C49C3C] text-sm rounded-full flex items-center ${
-                isPdfGenerating ? 'opacity-50' : ''
-              }`}
-              onClick={handleDownloadPDF}
-            >
-              <DownloadCloud className="h-4 w-4 mr-2" />
-              {isPdfGenerating ? 'Generating PDF...' : 'Download PDF'}
-            </span>
+            {!isPdfMode && ( // Hide in PDF mode
+              <span
+                className={`px-4 cursor-pointer py-1 bg-white text-[#C49C3C] text-sm rounded-full flex items-center ${
+                  isPdfGenerating ? 'opacity-50' : ''
+                }`}
+                onClick={handleDownloadPDF}
+              >
+                <DownloadCloud className="h-4 w-4 mr-2" />
+                {isPdfGenerating ? 'Generating PDF...' : 'Download PDF'}
+              </span>
+            )}
           </div>
         </div>
 
@@ -183,7 +192,9 @@ export const QuotesView = () => {
               <p className="text-sm font-medium text-gray-700">
                 {createdDate.toLocaleDateString()}
                 <br />
-                <span className="text-gray-400 text-xs ml-2">({timeAgo})</span>
+                {!isPdfMode && ( // Hide in PDF mode
+                  <span className="text-gray-400 text-xs ml-2">({timeAgo})</span>
+                )}
               </p>
             </div>
           </div>

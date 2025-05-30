@@ -35,8 +35,15 @@ export const LoginView = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-indigo-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-2xl shadow-none">
+    <div className="min-h-screen flex  flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 gap-10">
+      <div>
+        <img
+          src="https://simcoehomesolutions.ca/wp-content/uploads/2025/02/Untitled-design-2024-09-24T011029.623-1-1-1.png"
+          alt="logo"
+          width={'360px'}
+        />
+      </div>
+      <div className="max-w-md w-full space-y-8 bg-white md:p-8 p-4 rounded-2xl shadow-none border">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">Sign In</h2>
         </div>

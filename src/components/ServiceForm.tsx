@@ -5,6 +5,7 @@ import { quoteAPI } from '../services/api';
 import useAuthStore from '../store/authStore';
 import { toast } from 'react-toastify';
 import { formatDate } from '../utils/string';
+import { useLocation } from 'react-router-dom';
 
 declare global {
   interface Window {
@@ -57,6 +58,71 @@ export default function CalculatorView() {
   const toggleDiscountDropdown = () => {
     setIsDiscountDropdownOpen(!isDiscountDropdownOpen);
   };
+
+  const location = useLocation();
+  const fetchQuoteData = location.state;
+
+  // Now you can access the passed data
+  console.log('Quote data:', fetchQuoteData);
+
+  useEffect(() => {
+    const fetchQuote = async () => {
+      try {
+        setIsLoading(true);
+        if (!fetchQuoteData?.id) throw new Error('Quote ID is required');
+        // Provide default values for the missing arguments (e.g., limit and offset)
+        const response = await quoteAPI.getQuote(fetchQuoteData?.id);
+        if (response.data.length != 0) {
+          // console.log('Fetched quote data:', response.data);
+          const quote = response.data;
+
+          // Fill the form with fetched data
+          setClientInfo({
+            firstName: quote.clientInfo.firstName || '',
+            lastName: quote.clientInfo.lastName || '',
+            address: quote.clientInfo.address || '',
+            city: quote.clientInfo.city || '',
+            province: quote.clientInfo.province || '',
+            postalCode: quote.clientInfo.postalCode || '',
+            phoneNumber: quote.clientInfo.phoneNumber || '',
+            otherPhone: quote.clientInfo.otherPhone || '',
+            email: quote.clientInfo.email || '',
+            notes: quote.clientInfo.notes || '',
+          });
+
+          // Set calculations
+          // Set calculations
+          setCalculations(
+            quote.services.map((service: any) => ({
+              ...service,
+              serviceType: service.serviceType,
+              units: service.units,
+              subtotal: service.total || service.subtotal || 0,
+              rate: service.hourlyCrewCharge || service.rate || 0,
+              setupMinutes: service.setupMinutes || 0,
+              perUnitMinutes: service.perUnitMinutes || 0,
+              numberOfPersons: service.numberOfPersons || 1,
+              totalTimeMinutes: service.totalTimeMinutes || 0,
+              totalTimeHours: service.totalTimeHours || 0,
+              calendarSlotHours: service.calendarSlotHours || 0,
+            }))
+          );
+
+          // Set discount
+          setDiscountType(quote.discount.percentage > 0 ? 'PERCENTAGE' : 'FLAT');
+          setDiscountValue(
+            quote.discount.percentage > 0 ? quote.discount.percentage : quote.discount.flat
+          );
+        }
+      } catch (err) {
+        console.error('Error fetching quote:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchQuote();
+  }, [fetchQuoteData?.id]);
 
   // Add Google Places Autocomplete
   useEffect(() => {
@@ -321,7 +387,6 @@ export default function CalculatorView() {
     });
 
     const validation = validateForm();
-
     if (!validation.isValid) {
       // Show all validation errors
       validation.errors.forEach((error) => {
@@ -366,16 +431,24 @@ export default function CalculatorView() {
       },
     };
 
-    if (clientInfo.email === undefined || clientInfo.email === '' || !clientInfo?.email?.trim()) {
+    if (!quoteData.clientInfo.email?.trim()) {
       delete quoteData.clientInfo.email;
     }
 
     setIsLoading(true);
     // console.log('Quote data:', quoteData);
     try {
-      const response = await quoteAPI.create(quoteData);
+      let response;
+      if (fetchQuoteData?.id) {
+        // Update existing quote
+        response = await quoteAPI.updateQuote(fetchQuoteData.id, quoteData);
+        toast.success('Quote updated successfully!');
+      } else {
+        // Create new quote
+        response = await quoteAPI.create(quoteData);
+        toast.success('Quote created successfully!');
+      }
       console.log('Quote submitted successfully:', response);
-      toast.success('Submit Success!');
     } catch (error) {
       console.error('Failed to submit quote:', error);
     } finally {
