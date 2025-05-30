@@ -568,7 +568,12 @@ export default function CalculatorView() {
                 <input
                   type="tel"
                   value={clientInfo.phoneNumber}
-                  onChange={(e) => setClientInfo({ ...clientInfo, phoneNumber: e.target.value })}
+                  onChange={(e) => {
+                    const raw = e.target.value.replace(/\D/g, '');
+                    if (raw.length <= 10) {
+                      setClientInfo({ ...clientInfo, phoneNumber: e.target.value });
+                    }
+                  }}
                   className={getInputClassName('phoneNumber', clientInfo.phoneNumber)}
                 />
               </div>

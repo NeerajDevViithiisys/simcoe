@@ -89,6 +89,18 @@ const App = () => {
                     <Calculator className="h-5 w-5 mr-2 text-[#C49C3C]" />
                     Calculator
                   </Link>
+                  <Link
+                    to="/quotes"
+                    onClick={() => setCurrentPath('/quotes')}
+                    className={`py-2 inline-flex items-center px-1 pt-1 text-sm font-medium border-b-2 border-transparent hover:border-[#C49C3C] ${
+                      currentPath === '/quotes'
+                        ? 'text-[#C49C3C] border-b-[#C49C3C]'
+                        : 'text-[#000]'
+                    }`}
+                  >
+                    <Home className="h-5 w-5 mr-2 text-[#C49C3C]" />
+                    Quotes
+                  </Link>
                   {user?.role === 'admin' && (
                     <>
                       <Link
@@ -102,18 +114,6 @@ const App = () => {
                       >
                         <Users className="h-5 w-5 mr-2 text-[#C49C3C]" />
                         Users
-                      </Link>
-                      <Link
-                        to="/quotes"
-                        onClick={() => setCurrentPath('/quotes')}
-                        className={`py-2 inline-flex items-center px-1 pt-1 text-sm font-medium border-b-2 border-transparent hover:border-[#C49C3C] ${
-                          currentPath === '/quotes'
-                            ? 'text-[#C49C3C] border-b-[#C49C3C]'
-                            : 'text-[#000]'
-                        }`}
-                      >
-                        <Home className="h-5 w-5 mr-2 text-[#C49C3C]" />
-                        Quotes
                       </Link>
                     </>
                   )}
@@ -166,6 +166,18 @@ const App = () => {
                   <Calculator className="h-5 w-5 mr-3 text-[#C49C3C]" />
                   Calculator
                 </Link>
+                <Link
+                  to="/quotes"
+                  className={`block px-4 py-3 text-base font-medium transition-colors flex items-center ${
+                    currentPath === '/quotes'
+                      ? 'text-[#C49C3C] bg-gray-50'
+                      : 'text-gray-700 hover:bg-gray-50'
+                  }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <Home className="h-5 w-5 mr-3 text-[#C49C3C]" />
+                  Quotes
+                </Link>
                 {user?.role === 'admin' && (
                   <>
                     <Link
@@ -179,18 +191,6 @@ const App = () => {
                     >
                       <Users className="h-5 w-5 mr-3 text-[#C49C3C]" />
                       Users
-                    </Link>
-                    <Link
-                      to="/quotes"
-                      className={`block px-4 py-3 text-base font-medium transition-colors flex items-center ${
-                        currentPath === '/quotes'
-                          ? 'text-[#C49C3C] bg-gray-50'
-                          : 'text-gray-700 hover:bg-gray-50'
-                      }`}
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      <Home className="h-5 w-5 mr-3 text-[#C49C3C]" />
-                      Quotes
                     </Link>
                   </>
                 )}
@@ -228,7 +228,7 @@ const App = () => {
             <Route
               path="/quotes"
               element={
-                <ProtectedRoute allowedRoles={['admin']}>
+                <ProtectedRoute>
                   <Quotes />
                 </ProtectedRoute>
               }

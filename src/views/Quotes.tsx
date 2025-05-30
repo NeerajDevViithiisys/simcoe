@@ -8,15 +8,16 @@ import { formatDateData } from '../utils/string';
 import { useNavigate } from 'react-router-dom';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import useAuthStore from '../store/authStore';
 
 interface Quote {
   id: string;
+  invoice: string;
   services: {
     serviceType: ServiceType;
     units: number;
     id: string;
     total: number;
-    invoice: string;
   }[];
   clientInfo: {
     firstName: string;
@@ -59,6 +60,8 @@ export const Quotes = () => {
   const [selectedUser, setSelectedUser] = useState<string>('');
   const [users, setUsers] = useState<UserData[]>([]);
   const navigate = useNavigate();
+  const { user } = useAuthStore();
+  const isAdmin = user?.role === 'admin';
 
   // const [isLoadingUsers, setIsLoadingUsers] = useState(false);
   // Add state for delete confirmation
@@ -416,6 +419,7 @@ export const Quotes = () => {
                       {/* Status dropdown */}
                       <div>
                         <select
+                          disabled={!isAdmin}
                           value={quote.status || 'PENDING'}
                           onChange={(e) =>
                             handleStatusUpdate(quote.id, e.target.value as QuoteStatus)
@@ -476,26 +480,32 @@ export const Quotes = () => {
                         >
                           <Eye className="w-4 h-4" />
                         </button>
-                        <button
-                          onClick={() => handleEdituote(quote)}
-                          className="flex items-center px-3 py-1 bg-[#C49C3C] text-white text-sm font-medium rounded  transition-colors duration-200"
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDownloadPDF(quote)}
-                          className="flex items-center px-3 py-1 bg-[#C49C3C] text-white text-sm font-medium rounded transition-colors duration-200"
-                        >
-                          <Download className="w-4 h-4" />
-                        </button>
+                        {isAdmin && (
+                          <>
+                            <button
+                              onClick={() => handleEdituote(quote)}
+                              className="flex items-center px-3 py-1 bg-[#C49C3C] text-white text-sm font-medium rounded  transition-colors duration-200"
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDownloadPDF(quote)}
+                              className="flex items-center px-3 py-1 bg-[#C49C3C] text-white text-sm font-medium rounded transition-colors duration-200"
+                            >
+                              <Download className="w-4 h-4" />
+                            </button>
+                          </>
+                        )}
                       </div>
-                      <button
-                        onClick={() => handleDeleteDialog(quote.id)}
-                        className="flex items-center px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded transition-colors duration-200"
-                        title="Delete Quote"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      {isAdmin && (
+                        <button
+                          onClick={() => handleDeleteDialog(quote.id)}
+                          className="flex items-center px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded transition-colors duration-200"
+                          title="Delete Quote"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>

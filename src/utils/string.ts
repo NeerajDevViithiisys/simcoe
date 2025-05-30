@@ -33,3 +33,25 @@ export const formatDateData = (date: Date | string) => {
     day: 'numeric',
   });
 };
+
+// Add these validation functions after your interface declarations
+export const validatePhone = (phone: string): boolean => {
+  // Remove all non-digit characters
+  const digits = phone.replace(/\D/g, '');
+  return digits.length === 10;
+};
+
+export const formatPhoneNumber = (phone: string): string => {
+  // Remove all non-digit characters
+  const digits = phone.replace(/\D/g, '');
+  if (digits.length === 0) return '';
+
+  // Format as +1 (XXX) XXX-XXXX
+  if (digits.length <= 3) {
+    return `+1 (${digits}`;
+  } else if (digits.length <= 6) {
+    return `+1 (${digits.slice(0, 3)}) ${digits.slice(3)}`;
+  } else {
+    return `+1 (${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
+  }
+};
