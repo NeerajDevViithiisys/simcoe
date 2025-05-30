@@ -4,6 +4,7 @@ import { userAPI } from '../services/api';
 import { params } from '../types';
 import { toast } from 'react-toastify';
 import { validatePhone } from '../utils/string';
+import { ConfirmDialog } from '../components/confirmDialog';
 
 interface UserData {
   id: string;
@@ -20,6 +21,8 @@ export const UsersView = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<string | null>(null);
 
   // Add validation states
   const [errors, setErrors] = useState<{
@@ -98,7 +101,9 @@ export const UsersView = () => {
     try {
       const userData = {
         ...formData,
-        phoneNumber: '+1' + formData.phoneNumber.replace(/\D/g, ''), // Send only digits
+        phoneNumber: formData.phoneNumber.startsWith('+1')
+          ? formData.phoneNumber
+          : '+1' + formData.phoneNumber.replace(/\D/g, ''),
       };
 
       if (isEditing && currentUser) {
@@ -131,19 +136,51 @@ export const UsersView = () => {
     setFormData({
       name: user.name,
       email: user.email,
-      phoneNumber: user.phoneNumber,
+      phoneNumber: user.phoneNumber.replace(/^\+1/, '').replace(/\D/g, ''),
       password: '',
       metaData: user.metaData || {},
     });
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    setUsers(users.filter((user) => user.id !== id));
+  const handleDelete = async (id: string) => {
+    setUserToDelete(id);
+    setIsConfirmDialogOpen(true);
+  };
+
+  // Add the confirmation handler
+  const handleConfirmDelete = async () => {
+    if (!userToDelete) return;
+
+    try {
+      setIsLoading(true);
+      await userAPI.delete(userToDelete);
+      toast.success('User deleted successfully');
+      // Refresh the users list
+      await geUsers();
+    } catch (error) {
+      console.error('Failed to delete user:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to delete user');
+    } finally {
+      setIsLoading(false);
+      setIsConfirmDialogOpen(false);
+      setUserToDelete(null);
+    }
   };
 
   return (
     <div className="md:space-y-8 px-2">
+      {/* Add the confirmation dialog */}
+      <ConfirmDialog
+        isOpen={isConfirmDialogOpen}
+        onClose={() => {
+          setIsConfirmDialogOpen(false);
+          setUserToDelete(null);
+        }}
+        onConfirm={handleConfirmDelete}
+        title="Delete User"
+        message="Are you sure you want to delete this user? This action cannot be undone."
+      />
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold text-gray-900">Users List</h2>
         <button
