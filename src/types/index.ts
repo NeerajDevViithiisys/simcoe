@@ -109,4 +109,5 @@ export interface CalculationRow {
   totalTimeHours?: number;
   calendarSlotHours?: number;
   totalCost?: number;
+  id?: string;
 }

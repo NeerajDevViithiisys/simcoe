@@ -286,31 +286,37 @@ export default function CalculatorView() {
     e.preventDefault();
     const selectServices = [
       {
-        ...currentCalculation,
         serviceType: currentCalculation.serviceType,
         units: currentCalculation.units,
       },
     ];
 
     // Check if service type already exists (when not editing)
-    if (
-      !isEditing &&
-      calculations.some((calc) => calc.serviceType === currentCalculation.serviceType)
-    ) {
-      toast.error('This service type already exists. Please edit the existing one.');
-      return;
-    }
+    // if (
+    //   !isEditing &&
+    //   calculations.some((calc) => calc.serviceType === currentCalculation.serviceType)
+    // ) {
+    //   toast.error('This service type already exists. Please edit the existing one.');
+    //   return;
+    // }
 
     setCaluculationLoading(true);
     try {
       const result = await quoteAPI.calculate(selectServices);
       // console.log('Calculation result:', result);
+      const serviceData = result.data.services[0];
+
       const newRow: CalculationRow = {
-        ...result,
         serviceType: currentCalculation.serviceType,
         units: currentCalculation.units,
-        subtotal: result.data.services[0].totalCost,
-        rate: result.data.services[0].hourlyCrewCharge,
+        setupMinutes: serviceData.setupMinutes,
+        perUnitMinutes: serviceData.perUnitMinutes,
+        hourlyCrewCharge: serviceData.hourlyCrewCharge,
+        numberOfPersons: serviceData.numberOfPersons,
+        totalTimeMinutes: serviceData.totalTimeMinutes,
+        totalTimeHours: serviceData.totalTimeHours,
+        calendarSlotHours: serviceData.calendarSlotHours,
+        subtotal: serviceData.totalCost,
       };
 
       if (isEditing && editingIndex !== null) {
@@ -322,6 +328,7 @@ export default function CalculatorView() {
         // Add new service
         setCalculations([...calculations, newRow]);
       }
+
       setIsEditing(false);
       setEditingIndex(null);
       setCurrentCalculation({
@@ -401,17 +408,17 @@ export default function CalculatorView() {
       taxValue: tax,
       total: total,
       services: calculations.map((calc) => ({
-        ...calc,
+        id: calc.id,
+        serviceType: calc.serviceType,
+        units: calc.units,
         setupMinutes: calc.setupMinutes ?? 0,
         perUnitMinutes: calc.perUnitMinutes ?? 0,
-        rate: calc.rate ?? 0,
-        subtotal: calc.subtotal ?? 0,
         hourlyCrewCharge: calc.hourlyCrewCharge ?? 0,
-        numberOfPersons: calc.numberOfPersons ?? 1,
+        numberOfPersons: calc.numberOfPersons ?? 2,
         totalTimeMinutes: calc.totalTimeMinutes ?? 0,
         totalTimeHours: calc.totalTimeHours ?? 0,
         calendarSlotHours: calc.calendarSlotHours ?? 0,
-        totalCost: calc.subtotal ?? 0,
+        total: calc.subtotal ?? 0,
       })),
       discount: {
         flat: discount,

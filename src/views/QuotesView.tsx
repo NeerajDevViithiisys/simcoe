@@ -271,7 +271,7 @@ export const QuotesView = () => {
                         {service.units}
                       </td>
                       <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 text-right font-medium">
-                        ${service.total.toFixed(2)}
+                        ${(service?.total || 0).toFixed(2)}{' '}
                       </td>
                     </tr>
                   );
@@ -287,14 +287,14 @@ export const QuotesView = () => {
               <div className="flex justify-between py-2">
                 <span className="text-sm text-gray-500">Subtotal</span>
                 <span className="text-sm text-gray-900 font-medium">
-                  ${invoiceData.subtotal.toFixed(2)}
+                  ${(invoiceData?.subtotal || 0).toFixed(2)}
                 </span>
               </div>
 
               <div className="flex justify-between py-2">
                 <span className="text-sm text-gray-500">Discount</span>
                 <span className="text-sm text-green-900 font-medium">
-                  -${invoiceData.discount.flat.toFixed(2)}
+                  -${(invoiceData?.discount?.flat || 0).toFixed(2)}
                 </span>
               </div>
 
@@ -308,7 +308,7 @@ export const QuotesView = () => {
               <div className="flex justify-between py-2 border-t border-gray-200 mt-2">
                 <span className="text-base font-medium text-gray-900">Total</span>
                 <span className="text-base font-bold text-gray-900">
-                  ${invoiceData.total.toFixed(2)}
+                  ${(invoiceData?.total || 0).toFixed(2)}
                 </span>
               </div>
             </div>
