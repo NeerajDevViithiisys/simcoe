@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ServiceType } from '../types';
+import { CalculationRow, ClientInfo, getUnitLabel, ServiceType } from '../types';
 import { Pencil, Plus } from 'lucide-react';
 import { quoteAPI } from '../services/api';
 import useAuthStore from '../store/authStore';
@@ -22,34 +22,6 @@ declare global {
       };
     };
   }
-}
-
-interface ClientInfo {
-  firstName: string;
-  lastName: string;
-  address: string;
-  city: string;
-  province: string;
-  postalCode: string;
-  phoneNumber: string;
-  otherPhone: string;
-  email: string;
-  notes: string;
-}
-
-interface CalculationRow {
-  serviceType: ServiceType;
-  units: number;
-  rate?: number;
-  subtotal?: number;
-  setupMinutes?: number;
-  perUnitMinutes?: number;
-  hourlyCrewCharge?: number;
-  numberOfPersons?: number;
-  totalTimeMinutes?: number;
-  totalTimeHours?: number;
-  calendarSlotHours?: number;
-  totalCost?: number;
 }
 
 export default function CalculatorView() {
@@ -308,7 +280,10 @@ export default function CalculatorView() {
     if (!clientInfo.province.trim()) errors.push('Province is required');
     if (!clientInfo.postalCode.trim()) errors.push('Postal Code is required');
     if (!clientInfo.phoneNumber.trim()) errors.push('Phone Number is required');
-    if (clientInfo.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clientInfo.email)) {
+    if (
+      (clientInfo.email ?? '').trim() &&
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clientInfo.email ?? '')
+    ) {
       errors.push('Please enter a valid email address');
     }
 
@@ -354,13 +329,25 @@ export default function CalculatorView() {
       });
       return;
     }
-
+    console.log({ calculations });
     const quoteData = {
       userId: user?.id,
       subtotal: subtotal,
       taxValue: tax,
       total: total,
-      services: calculations,
+      services: calculations.map((calc) => ({
+        ...calc,
+        setupMinutes: calc.setupMinutes ?? 0,
+        perUnitMinutes: calc.perUnitMinutes ?? 0,
+        rate: calc.rate ?? 0,
+        subtotal: calc.subtotal ?? 0,
+        hourlyCrewCharge: calc.hourlyCrewCharge ?? 0,
+        numberOfPersons: calc.numberOfPersons ?? 1,
+        totalTimeMinutes: calc.totalTimeMinutes ?? 0,
+        totalTimeHours: calc.totalTimeHours ?? 0,
+        calendarSlotHours: calc.calendarSlotHours ?? 0,
+        totalCost: calc.subtotal ?? 0,
+      })),
       discount: {
         flat: discount,
         percentage: discountValue,
@@ -374,10 +361,15 @@ export default function CalculatorView() {
         postalCode: clientInfo.postalCode,
         phoneNumber: clientInfo.phoneNumber,
         otherPhone: clientInfo.otherPhone,
-        email: clientInfo.email,
         notes: clientInfo.notes,
+        email: clientInfo.email,
       },
     };
+
+    if (clientInfo.email === undefined || clientInfo.email === '' || !clientInfo?.email?.trim()) {
+      delete quoteData.clientInfo.email;
+    }
+
     setIsLoading(true);
     // console.log('Quote data:', quoteData);
     try {
@@ -404,7 +396,7 @@ export default function CalculatorView() {
     return `block w-full rounded border ${
       isInvalid ? 'border-red-300 bg-red-50' : 'border-gray-300'
     } px-3 py-2 text-sm focus:outline-none focus:ring-1 ${
-      isInvalid ? 'focus:ring-red-500 focus:border-red-500' : 'focus:ring-purple-500'
+      isInvalid ? 'focus:ring-red-500 focus:border-red-500' : ''
     }`;
   };
 
@@ -412,7 +404,7 @@ export default function CalculatorView() {
     <div className="max-w-md mx-auto">
       <div className="px-2 flex flex-col gap-3">
         {/* Header Card */}
-        <div className="bg-white shadow-sm p-4 rounded">
+        <div className="bg-white  p-4 rounded border border-[rgba(0,0,0,.1)]">
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-md font-semibold">SHS QUOTE</h1>
@@ -424,9 +416,9 @@ export default function CalculatorView() {
         </div>
 
         {/* Info Card */}
-        <div className="bg-white shadow-sm px-4 py-6 rounded">
+        <div className="bg-white  px-4 py-6 rounded border border-[rgba(0,0,0,.1)]">
           <div className="flex justify-between items-center mb-2">
-            <p className="text-xs text-gray-500 mb-1">Client INFO</p>
+            <p className="text-xs text-gray-500 mb-1">Customer Details</p>
           </div>
           {/* Client Information Form */}
           <div className="space-y-5 border-t border-gray-200 pt-3">
@@ -460,7 +452,7 @@ export default function CalculatorView() {
                 type="text"
                 value={clientInfo.address}
                 onChange={(e) => setClientInfo({ ...clientInfo, address: e.target.value })}
-                className={getInputClassName('firstName', clientInfo.address)}
+                className={getInputClassName('address', clientInfo.address)}
                 placeholder="Start typing to search address..."
               />
             </div>
@@ -472,7 +464,7 @@ export default function CalculatorView() {
                   type="text"
                   value={clientInfo.city}
                   onChange={(e) => setClientInfo({ ...clientInfo, city: e.target.value })}
-                  className={getInputClassName('firstName', clientInfo.city)}
+                  className={getInputClassName('city', clientInfo.city)}
                 />
               </div>
               <div>
@@ -481,7 +473,7 @@ export default function CalculatorView() {
                   type="text"
                   value={clientInfo.province}
                   onChange={(e) => setClientInfo({ ...clientInfo, province: e.target.value })}
-                  className={getInputClassName('firstName', clientInfo.province)}
+                  className={getInputClassName('province', clientInfo.province)}
                 />
               </div>
               <div>
@@ -490,7 +482,7 @@ export default function CalculatorView() {
                   type="text"
                   value={clientInfo.postalCode}
                   onChange={(e) => setClientInfo({ ...clientInfo, postalCode: e.target.value })}
-                  className={getInputClassName('firstName', clientInfo.postalCode)}
+                  className={getInputClassName('postalCode', clientInfo.postalCode)}
                 />
               </div>
             </div>
@@ -504,7 +496,7 @@ export default function CalculatorView() {
                   type="tel"
                   value={clientInfo.phoneNumber}
                   onChange={(e) => setClientInfo({ ...clientInfo, phoneNumber: e.target.value })}
-                  className={getInputClassName('firstName', clientInfo.phoneNumber)}
+                  className={getInputClassName('phoneNumber', clientInfo.phoneNumber)}
                 />
               </div>
               <div>
@@ -524,7 +516,7 @@ export default function CalculatorView() {
                 type="email"
                 value={clientInfo.email}
                 onChange={(e) => setClientInfo({ ...clientInfo, email: e.target.value })}
-                className={getInputClassName('firstName', clientInfo.email)}
+                className={getInputClassName('email', clientInfo?.email ?? '')}
               />
             </div>
           </div>
@@ -532,9 +524,9 @@ export default function CalculatorView() {
         </div>
 
         {/* Invoice Items Card */}
-        <div className="bg-white shadow-sm px-4 py-6 rounded">
+        <div className="bg-white  px-4 py-6 rounded border border-[rgba(0,0,0,.1)]">
           <div className="flex justify-between items-center mb-2">
-            <p className="text-xs text-gray-500 mb-1">SERVICES</p>
+            <p className="text-xs text-gray-500 mb-1">Services</p>
           </div>
 
           {/* Service Input Fields - Always visible */}
@@ -552,7 +544,7 @@ export default function CalculatorView() {
                           .replace(/^\w/, (c) => c.toUpperCase())}
                       </span>
                       <svg
-                        className="h-5 w-5 text-purple-600"
+                        className="h-5 w-5 text-[#C49C3C]"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
@@ -571,9 +563,9 @@ export default function CalculatorView() {
                         {Object.values(ServiceType).map((type) => (
                           <div
                             key={type}
-                            className={`px-4 py-2 cursor-pointer hover:bg-purple-50 transition-colors ${
+                            className={`px-4 py-2 cursor-pointer hover:bg-[#C49C3C] hover:text-white transition-colors ${
                               currentCalculation.serviceType === type
-                                ? 'bg-purple-100 font-medium'
+                                ? 'bg-[#C49C3C] text-white font-medium'
                                 : ''
                             }`}
                             onClick={() => {
@@ -594,7 +586,9 @@ export default function CalculatorView() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Units</label>
+                <label className="block text-xs font-medium text-gray-500 mb-1">
+                  {getUnitLabel(currentCalculation.serviceType)}
+                </label>
                 <div className="relative">
                   {/* <span className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
                     <span className="text-gray-500">#</span>
@@ -610,6 +604,9 @@ export default function CalculatorView() {
                     }
                     className="block w-full rounded border border-gray-300 px-3 py-2 text-sm"
                     min="1"
+                    placeholder={`Enter ${getUnitLabel(
+                      currentCalculation.serviceType
+                    ).toLowerCase()}`}
                   />
                 </div>
               </div>
@@ -618,9 +615,9 @@ export default function CalculatorView() {
                 <button
                   type="submit"
                   disabled={caluculationLoading}
-                  className="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded flex items-center
-            focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors
-            disabled:bg-purple-300 disabled:cursor-not-allowed text-sm"
+                  className="px-3 py-1 bg-[#C49C3C]  text-white rounded flex items-center
+            focus:outline-none focus:ring-2 focus:ring-offset-2  transition-colors
+           disabled:cursor-not-allowed text-sm"
                 >
                   {isEditing ? <Pencil size={18} /> : <Plus size={18} />}
 
@@ -667,7 +664,7 @@ export default function CalculatorView() {
                           strokeWidth="2"
                           strokeLinecap="round"
                           strokeLinejoin="round"
-                          className="text-purple-500 hover:text-purple-700"
+                          className="text-[#C49C3C]  hover:text-purple-700"
                         >
                           <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                           <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
@@ -703,7 +700,7 @@ export default function CalculatorView() {
           </div>
         </div>
         {/* add discount */}
-        <div className="bg-white shadow-sm px-4 py-6 rounded">
+        <div className="bg-white  px-4 py-6 rounded border border-[rgba(0,0,0,.1)]">
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <p className="text-xs text-gray-500 mb-1">Discount</p>
@@ -716,7 +713,7 @@ export default function CalculatorView() {
                     <div className="block w-full rounded border border-gray-300 px-2 py-1.5 text-sm flex items-center justify-between">
                       <span>{discountType === 'FLAT' ? 'Flat Amount' : 'Percentage'}</span>
                       <svg
-                        className="h-5 w-5 text-purple-600"
+                        className="h-5 w-5 text-[#C49C3C]"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
@@ -733,8 +730,8 @@ export default function CalculatorView() {
                     {isDiscountDropdownOpen && (
                       <div className="absolute z-10 w-full mt-1 bg-white rounded-lg shadow-lg py-1 overflow-auto max-h-56">
                         <div
-                          className={`px-4 py-2 cursor-pointer hover:bg-purple-50 transition-colors ${
-                            discountType === 'FLAT' ? 'bg-purple-100 font-medium' : ''
+                          className={`px-4 py-2 cursor-pointer hover:bg-[#C49C3C] hover:text-white transition-colors ${
+                            discountType === 'FLAT' ? 'bg-[#C49C3C] text-white font-medium' : ''
                           }`}
                           onClick={() => {
                             setDiscountType('FLAT');
@@ -744,8 +741,10 @@ export default function CalculatorView() {
                           Flat Amount
                         </div>
                         <div
-                          className={`px-4 py-2 cursor-pointer hover:bg-purple-50 transition-colors ${
-                            discountType === 'PERCENTAGE' ? 'bg-purple-100 font-medium' : ''
+                          className={`px-4 py-2 cursor-pointer hover:bg-[#C49C3C] hover:text-white transition-colors ${
+                            discountType === 'PERCENTAGE'
+                              ? 'bg-[#C49C3C] text-white font-medium'
+                              : ''
                           }`}
                           onClick={() => {
                             setDiscountType('PERCENTAGE');
@@ -775,15 +774,15 @@ export default function CalculatorView() {
           </div>
         </div>
         {/* Signature Card */}
-        <div className="bg-white shadow-sm px-4 py-6 rounded">
+        <div className="bg-white  px-4 py-6 rounded border border-[rgba(0,0,0,.1)]">
           <div className="flex flex-col gap-2">
             <div className="flex justify-between">
-              <p className="text-xs text-gray-500 mb-1">Add Notes</p>
+              <p className="text-xs text-gray-500 mb-1">Notes</p>
             </div>
 
             {/* {clientInfo.notes ? ( */}
             <div className="border-t border-gray-200 pt-4">
-              <p className="text-xs text-gray-500 mb-1">Notes</p>
+              <p className="text-xs text-gray-500 mb-1">Add Customer Notes</p>
               <textarea
                 value={clientInfo.notes}
                 onChange={(e) => setClientInfo({ ...clientInfo, notes: e.target.value })}
@@ -793,24 +792,13 @@ export default function CalculatorView() {
             </div>
           </div>
         </div>
-        <div className="bg-white shadow-sm px-4 py-6 rounded">
+        <div className="bg-white  px-4 py-6 rounded border border-[rgba(0,0,0,.1)]">
           {/* Summary */}
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
               <span>Subtotal</span>
               <span>${formatCurrency(subtotal)}</span>
             </div>
-            {/* <div className="flex justify-between text-sm">
-              <div className="flex items-center">
-                <span>Discount</span>
-                {discountValue !== 0 && (
-                  <span className="ml-1 bg-purple-100 text-purple-800 text-xs px-1 rounded">
-                    {discountType === 'PERCENTAGE' && `${discountValue}%`}
-                  </span>
-                )}
-              </div>
-              <span>${formatCurrency(discount)}</span>
-            </div> */}
             {/* Discount Form Section */}
             <div className="flex justify-between py-2 text-sm">
               <span>Discount</span>
@@ -819,7 +807,7 @@ export default function CalculatorView() {
             <div className="flex justify-between text-sm">
               <span>
                 TAX
-                <span className="ml-2 bg-purple-100 text-purple-800 text-xs p-1 rounded">13%</span>
+                <span className="ml-2 bg-[#c49c3c] text-white text-xs p-1 rounded">13%</span>
               </span>
               <span>${formatCurrency(tax)}</span>
             </div>
@@ -831,7 +819,7 @@ export default function CalculatorView() {
         </div>
 
         {/* Footer Card */}
-        <div className="bg-white rounded-sm shadow-sm p-4 rounded md:relative fixed bottom-0 left-0 right-0">
+        <div className="bg-white rounded-sm  p-4 rounded md:relative fixed bottom-0 left-0 right-0 border border-[rgba(0,0,0,.1)]">
           <div className="flex justify-between items-center">
             <div>
               <p className="text-xl font-bold">${formatCurrency(total)}</p>
@@ -839,7 +827,7 @@ export default function CalculatorView() {
             </div>
             <button
               disabled={isLoading}
-              className="bg-purple-600 text-white py-2 px-5 rounded font-medium text-sm"
+              className="bg-[#C49C3C] text-white py-2 px-5 rounded font-medium text-sm"
               onClick={() => submitQuoteData()}
             >
               {isLoading ? 'Submit...' : 'Submit'}

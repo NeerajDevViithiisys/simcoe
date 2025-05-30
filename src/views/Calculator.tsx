@@ -1,9 +1,9 @@
 import ServiceForm from '../components/ServiceForm';
 
-export default function CalculatorView() {
+export const CalculatorView = () => {
   return (
     <div className="space-y-8">
       <ServiceForm />
     </div>
   );
-}
+};

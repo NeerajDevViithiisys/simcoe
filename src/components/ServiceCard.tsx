@@ -85,20 +85,20 @@ export default function ServiceCard({
           <div className="flex justify-between items-center">
             <div>
               <p className="text-sm text-gray-500">Total Cost</p>
-              <p className="text-2xl font-bold text-purple-600">
+              <p className="text-2xl font-bold text-[#C49C3C]">
                 ${calculation.totalCost.toFixed(2)}
               </p>
             </div>
             <button
               onClick={onDownload}
-              className="hidden sm:flex items-center px-4 py-2 rounded-lg text-white bg-purple-600 hover:bg-purple-700 transition-colors"
+              className="hidden sm:flex items-center px-4 py-2 rounded-lg text-white bg-[#C49C3C]  transition-colors"
             >
               <Download className="mr-2 h-5 w-5" />
               Download Quote
             </button>
             <button
               onClick={onDownload}
-              className="sm:hidden p-2 rounded-lg text-white bg-purple-600 hover:bg-purple-700 transition-colors"
+              className="sm:hidden p-2 rounded-lg text-white bg-[#C49C3C]  transition-colors"
               title="Download Quote"
             >
               <Download className="h-5 w-5" />

@@ -57,3 +57,56 @@ export interface UserData {
   phoneNumber: string;
   metaData: Record<string, unknown>;
 }
+
+export const formatServiceType = (type: string) => {
+  if (!type) return '';
+  return type
+    .toLowerCase() // Make it all lowercase first
+    .replace(/_/g, ' ') // Replace underscores with spaces
+    .replace(/\b\w/g, (char: string) => char.toUpperCase()); // Capitalize each word
+};
+
+// Add a function to get the unit label based on service type
+export const getUnitLabel = (serviceType: ServiceType): string => {
+  const unitLabels: Record<ServiceType, string> = {
+    EXTERIOR_WINDOW_CLEANING: 'Window Panes',
+    INTERIOR_WINDOW_CLEANING: 'Window Panes',
+    EXTERIOR_GUTTER_CLEANING: 'LNFT',
+    INTERIOR_GUTTER_CLEANING: 'LNFT',
+    WOOD_POWERWASHING: 'Per Feet posts',
+    CONCRETE_POWERWASHING: 'Area Sqft',
+    SIDING_POWERWASHING: 'Area Sqft',
+    ROOF_MOSS_REMOVAL: 'Area Square Footage',
+    HOUSE_SOFTWASHING: 'Area Square Footage',
+  };
+
+  return unitLabels[serviceType] || 'Units';
+};
+
+export interface ClientInfo {
+  firstName: string;
+  lastName: string;
+  address: string;
+  city: string;
+  province: string;
+  postalCode: string;
+  phoneNumber: string;
+  otherPhone?: string;
+  email?: string;
+  notes?: string;
+}
+
+export interface CalculationRow {
+  serviceType: ServiceType;
+  units: number;
+  rate?: number;
+  subtotal?: number;
+  setupMinutes?: number;
+  perUnitMinutes?: number;
+  hourlyCrewCharge?: number;
+  numberOfPersons?: number;
+  totalTimeMinutes?: number;
+  totalTimeHours?: number;
+  calendarSlotHours?: number;
+  totalCost?: number;
+}

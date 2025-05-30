@@ -11,7 +11,7 @@ interface UserData {
   metaData: Record<string, unknown>;
 }
 
-export default function UsersView() {
+export const UsersView = () => {
   const [users, setUsers] = useState<UserData[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [currentUser, setCurrentUser] = useState<UserData | null>(null);
@@ -87,7 +87,7 @@ export default function UsersView() {
             setFormData(initialFormData);
             setIsDialogOpen(true);
           }}
-          className="flex items-center px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
+          className="flex items-center px-4 py-2 bg-[#C49C3C] text-white rounded "
         >
           <User className="h-5 w-5 mr-2" />
           Add User
@@ -95,7 +95,7 @@ export default function UsersView() {
       </div>
 
       {isDialogOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 ">
           <div className="bg-white rounded-2xl shadow-xl md:p-8 p-4 mx-2 w-full max-w-lg">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-semibold text-gray-900">
@@ -116,7 +116,7 @@ export default function UsersView() {
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2  focus:border-purple-500"
                   required
                 />
               </div>
@@ -126,7 +126,7 @@ export default function UsersView() {
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2  focus:border-purple-500"
                   required
                 />
               </div>
@@ -136,7 +136,7 @@ export default function UsersView() {
                   type="tel"
                   value={formData.phoneNumber}
                   onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2  focus:border-purple-500"
                   required
                 />
               </div>
@@ -147,14 +147,14 @@ export default function UsersView() {
                     type="password"
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2  focus:border-purple-500"
                     required
                   />
                 </div>
               )}
               <button
                 type="submit"
-                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-[#C49C3C]  focus:outline-none focus:ring-2 focus:ring-offset-2 "
               >
                 {isEditing ? 'Update User' : 'Create User'}
               </button>
@@ -163,7 +163,7 @@ export default function UsersView() {
         </div>
       )}
 
-      <div className="bg-white rounded shadow-sm md:p-2">
+      <div className="rounded shadow-sm md:p-2 border border-[rgba(0,0,0,.1)]">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -195,7 +195,7 @@ export default function UsersView() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <button
                       onClick={() => handleEdit(user)}
-                      className="text-purple-600 hover:text-purple-900 mr-4"
+                      className="text-[#C49C3C] hover:text-purple-900 mr-4"
                     >
                       <Pencil className="h-5 w-5" />
                     </button>
@@ -214,4 +214,4 @@ export default function UsersView() {
       </div>
     </div>
   );
-}
+};

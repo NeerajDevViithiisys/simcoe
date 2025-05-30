@@ -4,7 +4,7 @@ import { Phone, KeyRound } from 'lucide-react';
 import { authAPI } from '../services/api';
 import { toast } from 'react-toastify';
 
-export default function ForgotPasswordView() {
+export const ForgotPasswordView = () => {
   const [step, setStep] = useState<'phone' | 'otp' | 'password'>('phone');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [otp, setOtp] = useState('');
@@ -78,7 +78,7 @@ export default function ForgotPasswordView() {
                   name="phone"
                   type="tel"
                   required
-                  className="appearance-none rounded-lg relative block w-full pl-10 px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
+                  className="appearance-none rounded-lg relative block w-full pl-10 px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none  focus:border-purple-500 sm:text-sm"
                   placeholder="Phone Number"
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
@@ -88,7 +88,7 @@ export default function ForgotPasswordView() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#C49C3C]  focus:outline-none focus:ring-2 focus:ring-offset-2 "
             >
               {isLoading ? 'Sending...' : 'Send OTP'}
             </button>
@@ -110,7 +110,7 @@ export default function ForgotPasswordView() {
                   name="otp"
                   type="text"
                   required
-                  className="appearance-none rounded-lg relative block w-full pl-10 px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
+                  className="appearance-none rounded-lg relative block w-full pl-10 px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none  focus:border-purple-500 sm:text-sm"
                   placeholder="Enter OTP"
                   value={otp}
                   onChange={(e) => setOtp(e.target.value)}
@@ -120,7 +120,7 @@ export default function ForgotPasswordView() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#C49C3C]  focus:outline-none focus:ring-2 focus:ring-offset-2 "
             >
               {isLoading ? 'Verifying...' : 'Verify OTP'}
             </button>
@@ -142,7 +142,7 @@ export default function ForgotPasswordView() {
                   name="newPassword"
                   type="password"
                   required
-                  className="appearance-none rounded-lg relative block w-full pl-10 px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
+                  className="appearance-none rounded-lg relative block w-full pl-10 px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none  focus:border-purple-500 sm:text-sm"
                   placeholder="New Password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
@@ -152,7 +152,7 @@ export default function ForgotPasswordView() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#C49C3C]  focus:outline-none focus:ring-2 focus:ring-offset-2 "
             >
               {isLoading ? 'Resetting...' : 'Reset Password'}
             </button>
@@ -161,4 +161,4 @@ export default function ForgotPasswordView() {
       </div>
     </div>
   );
-}
+};

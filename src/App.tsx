@@ -1,18 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
-import { Calculator, Users, Home, Menu, X } from 'lucide-react';
+import { Calculator, Users, Home, Menu, X, LogOut } from 'lucide-react';
 import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import CalculatorView from './views/Calculator';
-import UsersView from './views/Users';
-import QuotesView from './views/QuotesView';
-import LoginView from './views/Login';
-import ForgotPasswordView from './views/ForgotPassword';
+import { CalculatorView } from './views/Calculator';
+import { UsersView } from './views/Users';
+import { QuotesView } from './views/QuotesView';
+import { LoginView } from './views/Login';
+import { ForgotPasswordView } from './views/ForgotPassword';
 import ProtectedRoute from './components/ProtectedRoute';
 import useAuthStore from './store/authStore';
-import Quotes from './views/Quotes';
+import { Quotes } from './views/Quotes';
+import 'react-toastify/dist/ReactToastify.css';
 
-function App() {
+const App = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, isAuthenticated } = useAuthStore();
   const [currentPath, setCurrentPath] = useState('/');
@@ -49,14 +49,19 @@ function App() {
 
   return (
     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-50">
+      <div className="min-h-screen bg-white">
         {isAuthenticated && (
-          <nav className="bg-white shadow-sm">
-            <div className="max-w-7xl mx-auto sm:px-6 lg:px-10 px-4">
+          <nav className="bg-white border-b">
+            <div className="max-w-8xl mx-auto px-6 lg:px-8">
               <div className="flex justify-between md:py-0 py-4">
                 <div className="flex items-center">
-                  <a href="/" className="md:text-xl font-bold text-purple-600">
-                    <h1 className="md:text-xl font-bold text-purple-600">Simcoe Service</h1>
+                  <a href="/" className="md:text-xl font-bold text-[#C49C3C]">
+                    <img
+                      src="https://simcoehomesolutions.ca/wp-content/uploads/2025/02/Untitled-design-2024-09-24T011029.623-1-1-1.png"
+                      alt="logo"
+                      width="200px"
+                      height="60px"
+                    />
                   </a>
                 </div>
 
@@ -64,7 +69,7 @@ function App() {
                 <div className="flex items-center sm:hidden">
                   <button
                     onClick={() => setIsMenuOpen(!isMenuOpen)}
-                    className="text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 rounded-md p-1"
+                    className="text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2  focus:ring-offset-2 rounded-md p-1"
                     aria-expanded={isMenuOpen}
                     aria-label="Toggle menu"
                   >
@@ -77,11 +82,11 @@ function App() {
                   <Link
                     to="/"
                     onClick={() => setCurrentPath('/')}
-                    className={`py-2 inline-flex items-center px-1 pt-1 text-sm font-medium border-b-2 border-transparent hover:border-gray-300 ${
-                      currentPath === '/' ? 'text-gray-900' : 'text-gray-500'
+                    className={`py-2 inline-flex items-center px-1 pt-1 text-sm font-medium border-b-2 border-transparent hover:border-[#C49C3C] ${
+                      currentPath === '/' ? 'text-[#C49C3C] border-b-[#C49C3C]' : 'text-[#000]'
                     }`}
                   >
-                    <Calculator className="h-5 w-5 mr-2" />
+                    <Calculator className="h-5 w-5 mr-2 text-[#C49C3C]" />
                     Calculator
                   </Link>
                   {user?.role === 'admin' && (
@@ -89,26 +94,37 @@ function App() {
                       <Link
                         to="/users"
                         onClick={() => setCurrentPath('/users')}
-                        className={`py-2 inline-flex items-center px-1 pt-1 text-sm font-medium border-b-2 border-transparent hover:border-gray-300 ${
-                          currentPath === '/users' ? 'text-gray-900' : 'text-gray-500'
+                        className={`py-2 inline-flex items-center px-1 pt-1 text-sm font-medium border-b-2 border-transparent hover:border-[#C49C3C] ${
+                          currentPath === '/users'
+                            ? 'text-[#C49C3C] border-b-[#C49C3C]'
+                            : 'text-[#000]'
                         }`}
                       >
-                        <Users className="h-5 w-5 mr-2" />
+                        <Users className="h-5 w-5 mr-2 text-[#C49C3C]" />
                         Users
                       </Link>
                       <Link
                         to="/quotes"
                         onClick={() => setCurrentPath('/quotes')}
-                        className={`py-2 inline-flex items-center px-1 pt-1 text-sm font-medium border-b-2 border-transparent hover:border-gray-300 ${
-                          currentPath === '/quotes' ? 'text-gray-900' : 'text-gray-500'
+                        className={`py-2 inline-flex items-center px-1 pt-1 text-sm font-medium border-b-2 border-transparent hover:border-[#C49C3C] ${
+                          currentPath === '/quotes'
+                            ? 'text-[#C49C3C] border-b-[#C49C3C]'
+                            : 'text-[#000]'
                         }`}
                       >
-                        <Home className="h-5 w-5 mr-2" />
+                        <Home className="h-5 w-5 mr-2 text-[#C49C3C]" />
                         Quotes
                       </Link>
                     </>
                   )}
                 </div>
+                <button
+                  className="py-2 hidden sm:inline-flex items-center px-1 pt-1 text-sm font-medium border-b-2 border-transparent hover:border-[#C49C3C] text-[#C49C3C]"
+                  onClick={() => useAuthStore.getState().logout()}
+                >
+                  <LogOut className="h-5 w-5 mr-2 text-[#C49C3C]" />
+                  Logout
+                </button>
               </div>
             </div>
 
@@ -130,7 +146,7 @@ function App() {
                 <span className="font-semibold text-lg text-gray-800">Menu</span>
                 <button
                   onClick={() => setIsMenuOpen(false)}
-                  className="text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 rounded-md p-1"
+                  className="text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2  rounded-md p-1"
                   aria-label="Close menu"
                 >
                   <X className="h-6 w-6" />
@@ -140,32 +156,51 @@ function App() {
               <div className="py-2">
                 <Link
                   to="/"
-                  className="block px-4 py-3 text-base font-medium text-gray-700 hover:bg-gray-50 transition-colors flex items-center"
+                  className={`block px-4 py-3 text-base font-medium transition-colors flex items-center ${
+                    currentPath === '/'
+                      ? 'text-[#C49C3C] bg-gray-50'
+                      : 'text-gray-700 hover:bg-gray-50'
+                  }`}
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  <Calculator className="h-5 w-5 mr-3 text-purple-600" />
+                  <Calculator className="h-5 w-5 mr-3 text-[#C49C3C]" />
                   Calculator
                 </Link>
                 {user?.role === 'admin' && (
                   <>
                     <Link
                       to="/users"
-                      className="block px-4 py-3 text-base font-medium text-gray-700 hover:bg-gray-50 transition-colors flex items-center"
+                      className={`block px-4 py-3 text-base font-medium transition-colors flex items-center ${
+                        currentPath === '/users'
+                          ? 'text-[#C49C3C] bg-gray-50'
+                          : 'text-gray-700 hover:bg-gray-50'
+                      }`}
                       onClick={() => setIsMenuOpen(false)}
                     >
-                      <Users className="h-5 w-5 mr-3 text-purple-600" />
+                      <Users className="h-5 w-5 mr-3 text-[#C49C3C]" />
                       Users
                     </Link>
                     <Link
                       to="/quotes"
-                      className="block px-4 py-3 text-base font-medium text-gray-700 hover:bg-gray-50 transition-colors flex items-center"
+                      className={`block px-4 py-3 text-base font-medium transition-colors flex items-center ${
+                        currentPath === '/quotes'
+                          ? 'text-[#C49C3C] bg-gray-50'
+                          : 'text-gray-700 hover:bg-gray-50'
+                      }`}
                       onClick={() => setIsMenuOpen(false)}
                     >
-                      <Home className="h-5 w-5 mr-3 text-purple-600" />
+                      <Home className="h-5 w-5 mr-3 text-[#C49C3C]" />
                       Quotes
                     </Link>
                   </>
                 )}
+                <button
+                  className="block px-4 py-3 text-base font-medium text-gray-700 hover:bg-gray-50 transition-colors flex items-center"
+                  onClick={() => useAuthStore.getState().logout()}
+                >
+                  <LogOut className="h-5 w-5 mr-3 text-[#C49C3C]" />
+                  Logout
+                </button>
               </div>
             </div>
           </nav>
@@ -212,6 +247,6 @@ function App() {
       <ToastContainer />
     </BrowserRouter>
   );
-}
+};
 
 export default App;
