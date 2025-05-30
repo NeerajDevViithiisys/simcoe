@@ -3,7 +3,7 @@ import { toast } from 'react-toastify';
 import { params } from '../types';
 
 // Changed to HTTP since the backend might not be configured for HTTPS
-const BASE_URL = 'https://api.simcohomesolution.com/api';
+const BASE_URL = 'https://api.simcoehomesolutions.com/';
 
 const api = axios.create({
   baseURL: BASE_URL,
