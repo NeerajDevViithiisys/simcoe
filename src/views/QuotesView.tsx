@@ -160,7 +160,7 @@ export const QuotesView = () => {
   };
 
   return (
-    <div className="min-h-screen md:py-6 px-2 sm:md:px-6 px-4 lg:px-8" ref={contentRef}>
+    <div className="min-h-screen md:py-6 px-2 sm:md:px-6 px-2 lg:px-8" ref={contentRef}>
       <div className="max-w-3xl mx-auto bg-white rounded border overflow-hidden">
         {/* Invoice Header */}
         <div className="md:px-6 px-4 py-4 bg-[#C49C3C]">

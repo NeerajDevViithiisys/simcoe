@@ -53,17 +53,17 @@ const App = () => {
       <div className="min-h-screen bg-white">
         {isAuthenticated && (
           <nav className="bg-white border-b">
-            <div className="max-w-8xl mx-auto px-6 lg:px-8">
+            <div className="max-w-8xl mx-auto px-2 lg:px-8">
               <div className="flex justify-between md:py-0 py-4">
                 <div className="flex items-center">
-                  <a href="/" className="md:text-xl font-bold text-[#C49C3C]">
+                  <Link to="/" className="md:text-xl font-bold text-[#C49C3C]">
                     <img
                       src="https://simcoehomesolutions.ca/wp-content/uploads/2025/02/Untitled-design-2024-09-24T011029.623-1-1-1.png"
                       alt="logo"
                       width="200px"
                       height="60px"
                     />
-                  </a>
+                  </Link>
                 </div>
 
                 {/* Mobile menu button */}

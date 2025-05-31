@@ -172,12 +172,8 @@ export default function CalculatorView() {
               let province = '';
               let postalCode = '';
 
-              // Log all address components for debugging
-              // console.log('Address components:', place.address_components);
-
               for (const component of place.address_components) {
                 const types = component.types;
-                // console.log('Component:', component.long_name, 'Types:', types);
 
                 if (types.includes('street_number')) {
                   streetNumber = component.long_name;
@@ -196,16 +192,14 @@ export default function CalculatorView() {
                 }
               }
 
-              const updatedClientInfo = {
-                ...clientInfo,
+              // Preserve existing client info while updating address fields
+              setClientInfo((prevInfo) => ({
+                ...prevInfo,
                 address: `${streetNumber} ${streetName}`.trim(),
                 city,
                 province,
                 postalCode,
-              };
-
-              // console.log('Updated client info:', updatedClientInfo);
-              setClientInfo(updatedClientInfo);
+              }));
             });
           }
         } catch (error) {
@@ -418,7 +412,7 @@ export default function CalculatorView() {
         totalTimeMinutes: calc.totalTimeMinutes ?? 0,
         totalTimeHours: calc.totalTimeHours ?? 0,
         calendarSlotHours: calc.calendarSlotHours ?? 0,
-        total: calc.subtotal ?? 0,
+        totalCost: calc.subtotal ?? 0,
       })),
       discount: {
         flat: discount,
