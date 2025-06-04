@@ -1,14 +1,23 @@
-import React, { useEffect, useState } from 'react';
-import { QuoteStatus, ServiceType, UserData } from '../types';
-import { quoteAPI, userAPI } from '../services/api';
-import { Eye, Trash2, User, MapPin, Download, Phone, Calendar, Pencil } from 'lucide-react';
-import { params } from '../types';
-import { toast } from 'react-toastify';
-import { formatDateData } from '../utils/string';
-import { useNavigate } from 'react-router-dom';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
-import useAuthStore from '../store/authStore';
+import React, { useEffect, useState } from "react";
+import { QuoteStatus, ServiceType, UserData } from "../types";
+import { quoteAPI, userAPI } from "../services/api";
+import {
+  Eye,
+  Trash2,
+  User,
+  MapPin,
+  Download,
+  Phone,
+  Calendar,
+  Pencil,
+} from "lucide-react";
+import { params } from "../types";
+import { toast } from "react-toastify";
+import { formatDateData } from "../utils/string";
+import { useNavigate } from "react-router-dom";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
+import useAuthStore from "../store/authStore";
 
 interface Quote {
   id: string;
@@ -56,16 +65,19 @@ export const Quotes = () => {
   const [hasMore, setHasMore] = useState(false);
   const [page, setPage] = useState(1);
   const ITEMS_PER_PAGE = 4;
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedUser, setSelectedUser] = useState<string>('');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedUser, setSelectedUser] = useState<string>("");
   const [users, setUsers] = useState<UserData[]>([]);
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  const isAdmin = user?.role === 'admin';
+  const isAdmin = user?.role === "admin";
 
   // const [isLoadingUsers, setIsLoadingUsers] = useState(false);
   // Add state for delete confirmation
-  const [deleteDialog, setDeleteDialog] = useState<{ isOpen: boolean; quoteId: string | null }>({
+  const [deleteDialog, setDeleteDialog] = useState<{
+    isOpen: boolean;
+    quoteId: string | null;
+  }>({
     isOpen: false,
     quoteId: null,
   });
@@ -78,7 +90,7 @@ export const Quotes = () => {
       const response = await userAPI.list({ page: 1, limit: 100 }); // Fetch up to 100 users
       setUsers(response.data);
     } catch (error) {
-      console.error('Failed to fetch users:', error);
+      console.error("Failed to fetch users:", error);
     } finally {
       // setIsLoadingUsers(false);
     }
@@ -94,18 +106,20 @@ export const Quotes = () => {
 
       // Update local state to reflect the change
       setQuotes((prevQuotes) =>
-        prevQuotes.map((quote) => (quote.id === quoteId ? { ...quote, status } : quote))
+        prevQuotes.map((quote) =>
+          quote.id === quoteId ? { ...quote, status } : quote
+        )
       );
 
       toast.success(`Quote ${status.toLowerCase()} successfully`);
     } catch (error) {
-      console.error('Failed to update quote status:', error);
-      toast.error('Failed to update quote status');
+      console.error("Failed to update quote status:", error);
+      toast.error("Failed to update quote status");
     }
   };
 
   const getQuotes = async (pageNum: number, limit: number) => {
-    console.log('Fetching quotes...', pageNum, limit);
+    console.log("Fetching quotes...", pageNum, limit);
     const params: params = {
       page: pageNum,
       limit: limit,
@@ -140,7 +154,7 @@ export const Quotes = () => {
       setIsLoading(false);
     } catch (error) {
       setIsLoading(false);
-      console.error('Failed to fetch quotes:', error);
+      console.error("Failed to fetch quotes:", error);
       // Optionally show error to user
     }
   };
@@ -153,15 +167,15 @@ export const Quotes = () => {
   };
   // Handle view quote
   const handleViewQuote = (quote: Quote) => {
-    console.log('Viewing quote:', quote);
-    localStorage.setItem('selectedQuote', JSON.stringify(quote));
+    console.log("Viewing quote:", quote);
+    localStorage.setItem("selectedQuote", JSON.stringify(quote));
     navigate(`/quotes-view/${quote.id}`);
   };
 
   const handleEdituote = (quote: Quote) => {
-    console.log('Viewing quote:', quote);
-    localStorage.setItem('selectedQuote', JSON.stringify(quote));
-    navigate('/', {
+    console.log("Viewing quote:", quote);
+    localStorage.setItem("selectedQuote", JSON.stringify(quote));
+    navigate("/", {
       state: {
         id: quote.id,
       },
@@ -182,12 +196,14 @@ export const Quotes = () => {
       await quoteAPI.deleteQuote(deleteDialog.quoteId);
 
       // Update local state
-      setQuotes((prevQuotes) => prevQuotes.filter((quote) => quote.id !== deleteDialog.quoteId));
+      setQuotes((prevQuotes) =>
+        prevQuotes.filter((quote) => quote.id !== deleteDialog.quoteId)
+      );
 
-      toast.success('Quote deleted successfully');
+      toast.success("Quote deleted successfully");
     } catch (error) {
-      console.error('Failed to delete quote:', error);
-      toast.error('Failed to delete quote');
+      console.error("Failed to delete quote:", error);
+      toast.error("Failed to delete quote");
     } finally {
       setIsDeleting(false);
       setDeleteDialog({ isOpen: false, quoteId: null });
@@ -212,7 +228,7 @@ export const Quotes = () => {
     const value = e.target.value;
     setSelectedUser(value);
     setPage(1);
-    console.log('Selected user:', value);
+    console.log("Selected user:", value);
     // getQuotes(page, ITEMS_PER_PAGE);
   };
 
@@ -223,10 +239,11 @@ export const Quotes = () => {
   const handleDownloadPDF = async (quote: Quote) => {
     try {
       // Create a temporary container
-      const tempDiv = document.createElement('div');
-      tempDiv.style.position = 'absolute';
-      tempDiv.style.left = '-9999px';
-      tempDiv.style.background = 'white';
+      const tempDiv = document.createElement("div");
+      tempDiv.style.position = "absolute";
+      tempDiv.style.left = "-9999px";
+      tempDiv.style.background = "white";
+      tempDiv.style.width = "800px"; // Set a fixed width for better scaling
       document.body.appendChild(tempDiv);
 
       // Add content to the temporary container
@@ -244,7 +261,9 @@ export const Quotes = () => {
               </div>
               <div class="text-right">
                 <h2 class="text-sm text-gray-500">Date Issued</h2>
-                <p class="text-sm font-medium">${new Date(quote.createdAt).toLocaleDateString()}</p>
+                <p class="text-sm font-medium">${new Date(
+                  quote.createdAt
+                ).toLocaleDateString()}</p>
               </div>
             </div>
           </div>
@@ -257,7 +276,7 @@ export const Quotes = () => {
                   ${quote.clientInfo.firstName} ${quote.clientInfo.lastName}
                 </p>
                 <p class="text-sm">Phone: ${quote.clientInfo.phoneNumber}</p>
-                <p class="text-sm">Email: ${quote.clientInfo.email || ''}</p>
+                <p class="text-sm">Email: ${quote.clientInfo.email || ""}</p>
                 <p class="text-sm">Address: ${quote.clientInfo.address}</p>
               </div>
               <div class="text-right">
@@ -283,13 +302,16 @@ export const Quotes = () => {
                   .map(
                     (service) => `
                   <tr>
-                    <td class="p-2">${service.serviceType.replace(/_/g, ' ')}</td>
+                    <td class="p-2">${service.serviceType.replace(
+                      /_/g,
+                      " "
+                    )}</td>
                     <td class="p-2">${service.units}</td>
                     <td class="p-2 text-right">$${service.total.toFixed(2)}</td>
                   </tr>
                 `
                   )
-                  .join('')}
+                  .join("")}
               </tbody>
             </table>
           </div>
@@ -298,15 +320,21 @@ export const Quotes = () => {
             <div class="max-w-xs ml-auto">
               <div class="flex justify-between py-2">
                 <span class="text-sm text-gray-500">Subtotal</span>
-                <span class="text-sm font-medium">$${quote.subtotal.toFixed(2)}</span>
+                <span class="text-sm font-medium">$${quote.subtotal.toFixed(
+                  2
+                )}</span>
               </div>
               <div class="flex justify-between py-2">
                 <span class="text-sm text-gray-500">Discount</span>
-                <span class="text-sm font-medium">-$${quote.discount.flat.toFixed(2)}</span>
+                <span class="text-sm font-medium">-$${quote.discount.flat.toFixed(
+                  2
+                )}</span>
               </div>
               <div class="flex justify-between py-2">
                 <span class="text-sm text-gray-500">Tax</span>
-                <span class="text-sm font-medium">$${quote.taxValue.toFixed(2)}</span>
+                <span class="text-sm font-medium">$${quote.taxValue.toFixed(
+                  2
+                )}</span>
               </div>
               <div class="flex justify-between py-2 border-t mt-2">
                 <span class="font-medium">Total</span>
@@ -322,24 +350,52 @@ export const Quotes = () => {
         scale: 2,
         useCORS: true,
         logging: false,
-        backgroundColor: '#ffffff',
+        backgroundColor: "#ffffff",
+        width: tempDiv.offsetWidth,
+        height: tempDiv.offsetHeight,
+        windowWidth: tempDiv.scrollWidth,
+        windowHeight: tempDiv.scrollHeight,
       });
 
-      const imgWidth = 208; // A4 width in mm
+      // Calculate dimensions to fit A4
+      const imgWidth = 210; // A4 width in mm
+      const pageHeight = 297; // A4 height in mm
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, imgWidth, imgHeight);
+      const pdf = new jsPDF("p", "mm", "a4");
+      
+      // If content is taller than A4, split into multiple pages
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      while (heightLeft > 0) {
+        pdf.addImage(
+          canvas.toDataURL("image/png"),
+          "PNG",
+          0,
+          position,
+          imgWidth,
+          imgHeight
+        );
+        heightLeft -= pageHeight;
+        
+        if (heightLeft > 0) {
+          pdf.addPage();
+          position -= pageHeight;
+        }
+      }
 
       // Cleanup
       document.body.removeChild(tempDiv);
 
       // Save PDF
-      const fileName = `quote-${quote.id}-${new Date().toISOString().split('T')[0]}.pdf`;
+      const fileName = `quote-${quote.id}-${
+        new Date().toISOString().split("T")[0]
+      }.pdf`;
       pdf.save(fileName);
     } catch (error) {
-      console.error('Failed to generate PDF:', error);
-      toast.error('Failed to generate PDF');
+      console.error("Failed to generate PDF:", error);
+      toast.error("Failed to generate PDF");
     }
   };
 
@@ -418,31 +474,53 @@ export const Quotes = () => {
                       </div>
                       {/* Status dropdown */}
                       <div>
-                        <select
-                          disabled={!isAdmin}
-                          value={quote.status || 'PENDING'}
-                          onChange={(e) =>
-                            handleStatusUpdate(quote.id, e.target.value as QuoteStatus)
-                          }
-                          className={`text-sm rounded px-2 py-1 border cursor-pointer ${
-                            quote.status === 'ACCEPTED'
-                              ? 'bg-green-50 text-green-700 border-green-200'
-                              : quote.status === 'REJECTED'
-                              ? 'bg-red-50 text-red-700 border-red-200'
-                              : 'bg-yellow-50 text-yellow-700 border-yellow-200'
-                          }`}
-                        >
-                          <option value="PENDING">Pending</option>
-                          <option value="ACCEPTED">Accept</option>
-                          <option value="REJECTED">Reject</option>
-                        </select>
+                        {isAdmin ? (
+                          <select
+                            value={quote.status || "PENDING"}
+                            onChange={(e) =>
+                              handleStatusUpdate(
+                                quote.id,
+                                e.target.value as QuoteStatus
+                              )
+                            }
+                            className={`text-sm rounded px-2 py-1 border cursor-pointer ${
+                              quote.status === "ACCEPTED"
+                                ? "bg-green-50 text-green-700 border-green-200"
+                                : quote.status === "REJECTED"
+                                ? "bg-red-50 text-red-700 border-red-200"
+                                : "bg-yellow-50 text-yellow-700 border-yellow-200"
+                            }`}
+                          >
+                            <option value="PENDING">Pending</option>
+                            <option value="ACCEPTED">Accept</option>
+                            <option value="REJECTED">Reject</option>
+                          </select>
+                        ) : (
+                          <span
+                            className={`text-sm rounded px-2 py-1 border ${
+                              quote.status === "ACCEPTED"
+                                ? "bg-green-50 text-green-700 border-green-200"
+                                : quote.status === "REJECTED"
+                                ? "bg-red-50 text-red-700 border-red-200"
+                                : "bg-yellow-50 text-yellow-700 border-yellow-200"
+                            }`}
+                          >
+                            {quote.status || "PENDING"}
+                          </span>
+                        )}
+
                         <h6 className="text-xs text-right pt-2 flex gap-1 items-center">
                           <Calendar className="w-3 h-3 text-gray-400 mt-1 flex-shrink-0" />
-                          <span className="pt-1"> {formatDateData(quote.createdAt)}</span>
+                          <span className="pt-1">
+                            {" "}
+                            {formatDateData(quote.createdAt)}
+                          </span>
                         </h6>
                       </div>
                     </div>
-                    <p className="text-xs text-gray-400 py-3">Customer Details</p>
+                    <p className="text-xs text-gray-400 py-3">
+                      Customer Details
+                    </p>
                     {/* User Avatar */}
                     <div className="flex items-center mb-5">
                       <div className="w-12 h-12 bg-[#C49C3C] rounded-full flex items-center justify-center mr-4">
@@ -450,13 +528,18 @@ export const Quotes = () => {
                       </div>
                       <div className="flex-1">
                         <h3 className="text-md font-semibold text-gray-900 mb-1">
-                          {quote.clientInfo?.firstName?.charAt(0).toUpperCase() +
-                            quote.clientInfo?.firstName?.slice(1)}{' '}
+                          {quote.clientInfo?.firstName
+                            ?.charAt(0)
+                            .toUpperCase() +
+                            quote.clientInfo?.firstName?.slice(1)}{" "}
                           {quote.clientInfo?.lastName}
                         </h3>
                         <span className="text-sm text-gray-500 flex gap-1 items-center">
                           <Phone className="w-3 h-3 text-gray-400 mt-1 flex-shrink-0" />
-                          <span className="pt-1"> {quote.clientInfo?.phoneNumber}</span>
+                          <span className="pt-1">
+                            {" "}
+                            {quote.clientInfo?.phoneNumber}
+                          </span>
                         </span>
                       </div>
                     </div>
@@ -556,13 +639,18 @@ export const Quotes = () => {
           {deleteDialog.isOpen && (
             <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
               <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Delete Quote</h3>
+                <h3 className="text-lg font-medium text-gray-900 mb-4">
+                  Delete Quote
+                </h3>
                 <p className="text-sm text-gray-500 mb-4">
-                  Are you sure you want to delete this quote? This action cannot be undone.
+                  Are you sure you want to delete this quote? This action cannot
+                  be undone.
                 </p>
                 <div className="flex justify-end gap-3">
                   <button
-                    onClick={() => setDeleteDialog({ isOpen: false, quoteId: null })}
+                    onClick={() =>
+                      setDeleteDialog({ isOpen: false, quoteId: null })
+                    }
                     className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
                     disabled={isDeleting}
                   >
@@ -598,7 +686,7 @@ export const Quotes = () => {
                         Deleting...
                       </>
                     ) : (
-                      'Delete'
+                      "Delete"
                     )}
                   </button>
                 </div>

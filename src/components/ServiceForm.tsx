@@ -29,6 +29,7 @@ export default function CalculatorView() {
   const { user } = useAuthStore();
   const [caluculationLoading, setCaluculationLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [clientInfo, setClientInfo] = useState<ClientInfo>({
     firstName: '',
     lastName: '',
@@ -38,16 +39,25 @@ export default function CalculatorView() {
     postalCode: '',
     phoneNumber: '',
     otherPhone: '',
+    units: '',
     email: '',
     notes: '',
   });
   const [calculations, setCalculations] = useState<CalculationRow[]>([]);
   const [discountType, setDiscountType] = useState<'FLAT' | 'PERCENTAGE'>('FLAT');
-  const [discountValue, setDiscountValue] = useState(0);
+  const [discountValue, setDiscountValue] = useState<number | null>(null);
 
-  const [currentCalculation, setCurrentCalculation] = useState({
+  const [currentCalculation, setCurrentCalculation] = useState<{
+    serviceType: ServiceType;
+    units: number | '';
+    areaSquareFootage?: number | '';
+    numberOfStairs?: number | '';
+    numberOfPosts?: number | '';
+    railingLengthFeet?: number | '';
+    numberOfSpindles?: number | '';
+  }>({
     serviceType: ServiceType.EXTERIOR_WINDOW_CLEANING,
-    units: 1,
+    units: '',
   });
   const [isEditing, setIsEditing] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
@@ -55,21 +65,17 @@ export default function CalculatorView() {
   const [isDiscountDropdownOpen, setIsDiscountDropdownOpen] = useState(false);
   const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({});
 
-  const toggleDiscountDropdown = () => {
-    setIsDiscountDropdownOpen(!isDiscountDropdownOpen);
-  };
-
   const location = useLocation();
   const fetchQuoteData = location.state;
 
   // Now you can access the passed data
-  console.log('Quote data:', fetchQuoteData);
+  // console.log('Quote data:', fetchQuoteData);
 
   useEffect(() => {
     const fetchQuote = async () => {
       try {
         setIsLoading(true);
-        if (!fetchQuoteData?.id) throw new Error('Quote ID is required');
+        if (!fetchQuoteData?.id) return;
         // Provide default values for the missing arguments (e.g., limit and offset)
         const response = await quoteAPI.getQuote(fetchQuoteData?.id);
         if (response.data.length != 0) {
@@ -82,6 +88,7 @@ export default function CalculatorView() {
             lastName: quote.clientInfo.lastName || '',
             address: quote.clientInfo.address || '',
             city: quote.clientInfo.city || '',
+            units: quote.clientInfo.units || '',
             province: quote.clientInfo.province || '',
             postalCode: quote.clientInfo.postalCode || '',
             phoneNumber: quote.clientInfo.phoneNumber || '',
@@ -171,6 +178,8 @@ export default function CalculatorView() {
               let city = '';
               let province = '';
               let postalCode = '';
+              let units = '';
+              console.log(place)
 
               for (const component of place.address_components) {
                 const types = component.types;
@@ -190,15 +199,20 @@ export default function CalculatorView() {
                 if (types.includes('postal_code')) {
                   postalCode = component.long_name;
                 }
+                if (types.includes('subpremise')) {
+                  units = component.long_name.replace(/^(apt\.?|suite|unit)\s*/i, '').trim();
+                }
               }
-
               // Preserve existing client info while updating address fields
               setClientInfo((prevInfo) => ({
                 ...prevInfo,
-                address: `${streetNumber} ${streetName}`.trim(),
+                address: units
+                ? `${units}, ${streetNumber} ${streetName}`.trim()
+                : `${streetNumber} ${streetName}`.trim(),
                 city,
                 province,
                 postalCode,
+                units
               }));
             });
           }
@@ -279,30 +293,28 @@ export default function CalculatorView() {
   const handleCalculationSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const selectServices = [
-      {
-        serviceType: currentCalculation.serviceType,
-        units: currentCalculation.units,
-      },
+      currentCalculation.serviceType === ServiceType.WOOD_POWERWASHING
+        ? {
+            serviceType: currentCalculation.serviceType,
+            areaSquareFootage: currentCalculation.areaSquareFootage || 0,
+            numberOfStairs: currentCalculation.numberOfStairs || 0,
+            numberOfPosts: currentCalculation.numberOfPosts || 0,
+            railingLengthFeet: currentCalculation.railingLengthFeet || 0,
+            numberOfSpindles: currentCalculation.numberOfSpindles || 0,
+          }
+        : {
+            serviceType: currentCalculation.serviceType,
+            units: currentCalculation.units,
+          },
     ];
-
-    // Check if service type already exists (when not editing)
-    // if (
-    //   !isEditing &&
-    //   calculations.some((calc) => calc.serviceType === currentCalculation.serviceType)
-    // ) {
-    //   toast.error('This service type already exists. Please edit the existing one.');
-    //   return;
-    // }
 
     setCaluculationLoading(true);
     try {
       const result = await quoteAPI.calculate(selectServices);
-      // console.log('Calculation result:', result);
       const serviceData = result.data.services[0];
 
       const newRow: CalculationRow = {
         serviceType: currentCalculation.serviceType,
-        units: currentCalculation.units,
         setupMinutes: serviceData.setupMinutes,
         perUnitMinutes: serviceData.perUnitMinutes,
         hourlyCrewCharge: serviceData.hourlyCrewCharge,
@@ -311,15 +323,24 @@ export default function CalculatorView() {
         totalTimeHours: serviceData.totalTimeHours,
         calendarSlotHours: serviceData.calendarSlotHours,
         subtotal: serviceData.totalCost,
+        ...(currentCalculation.serviceType === ServiceType.WOOD_POWERWASHING
+          ? {
+              areaSquareFootage: currentCalculation.areaSquareFootage || 0,
+              numberOfStairs: currentCalculation.numberOfStairs || 0,
+              numberOfPosts: currentCalculation.numberOfPosts || 0,
+              railingLengthFeet: currentCalculation.railingLengthFeet || 0,
+              numberOfSpindles: currentCalculation.numberOfSpindles || 0,
+            }
+          : {
+              units: currentCalculation.units,
+            }),
       };
 
       if (isEditing && editingIndex !== null) {
-        // Update existing service
         const updatedCalculations = [...calculations];
         updatedCalculations[editingIndex] = newRow;
         setCalculations(updatedCalculations);
       } else {
-        // Add new service
         setCalculations([...calculations, newRow]);
       }
 
@@ -327,7 +348,12 @@ export default function CalculatorView() {
       setEditingIndex(null);
       setCurrentCalculation({
         serviceType: ServiceType.EXTERIOR_WINDOW_CLEANING,
-        units: 1,
+        units: '',
+        areaSquareFootage: '',
+        numberOfStairs: '',
+        numberOfPosts: '',
+        railingLengthFeet: '',
+        numberOfSpindles: '',
       });
     } catch (error) {
       console.error('Failed to calculate service:', error);
@@ -371,9 +397,82 @@ export default function CalculatorView() {
   };
 
   const subtotal = calculations.reduce((sum, calc) => sum + (calc.subtotal ?? 0), 0);
-  const discount = discountType === 'FLAT' ? discountValue : (subtotal * discountValue) / 100;
+  const discount = discountType === 'FLAT' 
+    ? (discountValue ?? 0) 
+    : ((subtotal * (discountValue ?? 0)) / 100);
   const tax = (subtotal - discount) * 0.13;
   const total = subtotal - discount + tax;
+
+  const clearFormData = () => {
+    setClientInfo({
+      firstName: '',
+      lastName: '',
+      address: '',
+      city: '',
+      province: '',
+      postalCode: '',
+      phoneNumber: '',
+      otherPhone: '',
+      units: '',
+      email: '',
+      notes: '',
+    });
+    setCalculations([]);
+    setDiscountType('FLAT');
+    setDiscountValue(null);
+    setCurrentCalculation({
+      serviceType: ServiceType.EXTERIOR_WINDOW_CLEANING,
+      units: '',
+    });
+  };
+
+  const handleDialogClose = () => {
+    setShowSuccessDialog(false);
+    clearFormData();
+  };
+
+  const SuccessDialog = () => {
+    useEffect(() => {
+      const timer = setTimeout(() => {
+        handleDialogClose();
+      }, 5000);
+
+      return () => clearTimeout(timer);
+    }, []);
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full mx-4">
+          <div className="text-center">
+            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
+              <svg
+                className="h-6 w-6 text-green-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              {fetchQuoteData?.id ? 'Quote Updated!' : 'Quote Created!'}
+            </h3>
+            <button 
+              className='px-6 py-1 rounded bg-[#C49C3C] text-white mt-4' 
+              onClick={handleDialogClose}
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   const submitQuoteData = async () => {
     // Mark all fields as touched
@@ -395,7 +494,7 @@ export default function CalculatorView() {
       });
       return;
     }
-    console.log({ calculations });
+
     const quoteData = {
       userId: user?.id,
       subtotal: subtotal,
@@ -429,6 +528,7 @@ export default function CalculatorView() {
         otherPhone: clientInfo.otherPhone,
         notes: clientInfo.notes,
         email: clientInfo.email,
+        units: clientInfo.units,
       },
     };
 
@@ -437,21 +537,18 @@ export default function CalculatorView() {
     }
 
     setIsLoading(true);
-    // console.log('Quote data:', quoteData);
     try {
       let response;
       if (fetchQuoteData?.id) {
-        // Update existing quote
         response = await quoteAPI.updateQuote(fetchQuoteData.id, quoteData);
-        toast.success('Quote updated successfully!');
       } else {
-        // Create new quote
         response = await quoteAPI.create(quoteData);
-        toast.success('Quote created successfully!');
       }
       console.log('Quote submitted successfully:', response);
+      setShowSuccessDialog(true);
     } catch (error) {
       console.error('Failed to submit quote:', error);
+      toast.error('Failed to submit quote. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -459,6 +556,10 @@ export default function CalculatorView() {
 
   const toggleDropdown = () => {
     setIsDropdownOpen(!isDropdownOpen);
+  };
+
+  const toggleDiscountDropdown = () => {
+    setIsDiscountDropdownOpen(!isDiscountDropdownOpen);
   };
 
   // Update the requiredFieldClass function to consider touched state
@@ -476,6 +577,7 @@ export default function CalculatorView() {
 
   return (
     <div className="max-w-md mx-auto">
+      {showSuccessDialog && <SuccessDialog />}
       <div className="px-2 flex flex-col gap-3">
         {/* Header Card */}
         <div className="bg-white  p-4 rounded border border-[rgba(0,0,0,.1)]">
@@ -530,15 +632,23 @@ export default function CalculatorView() {
                 placeholder="Start typing to search address..."
               />
             </div>
-
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">City*</label>
+              <input
+                type="text"
+                value={clientInfo.city}
+                onChange={(e) => setClientInfo({ ...clientInfo, city: e.target.value })}
+                className={getInputClassName('city', clientInfo.city)}
+              />
+            </div>
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">City*</label>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Units</label>
                 <input
                   type="text"
-                  value={clientInfo.city}
-                  onChange={(e) => setClientInfo({ ...clientInfo, city: e.target.value })}
-                  className={getInputClassName('city', clientInfo.city)}
+                  value={clientInfo.units}
+                  onChange={(e) => setClientInfo({ ...clientInfo, units: e.target.value })}
+                  className="block w-full rounded border border-gray-300 px-3 py-2 text-sm"
                 />
               </div>
               <div>
@@ -664,42 +774,141 @@ export default function CalculatorView() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">
-                  {getUnitLabel(currentCalculation.serviceType)}
-                </label>
-                <div className="relative">
-                  {/* <span className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
-                    <span className="text-gray-500">#</span>
-                  </span> */}
-                  <input
-                    type="number"
-                    value={currentCalculation.units}
-                    onChange={(e) =>
-                      setCurrentCalculation({
-                        ...currentCalculation,
-                        units: Number(e.target.value),
-                      })
-                    }
-                    className="block w-full rounded border border-gray-300 px-3 py-2 text-sm"
-                    min="1"
-                    placeholder={`Enter ${getUnitLabel(
-                      currentCalculation.serviceType
-                    ).toLowerCase()}`}
-                  />
+              {currentCalculation.serviceType !== ServiceType.WOOD_POWERWASHING ? (
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">
+                    {getUnitLabel(currentCalculation.serviceType)}
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      value={currentCalculation.units}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        const numValue = Number(value);
+                        if (value === '' || numValue > 0) {
+                          setCurrentCalculation({
+                            ...currentCalculation,
+                            units: value === '' ? '' : numValue,
+                          });
+                        }
+                      }}
+                      className="block w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                      placeholder={`Enter ${getUnitLabel(
+                        currentCalculation.serviceType
+                      ).toLowerCase()}`}
+                    />
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Area Square Footage</label>
+                    <input
+                      type="number"
+                      value={currentCalculation.areaSquareFootage || ''}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        const numValue = Number(value);
+                        if (value === '' || numValue >= 0) {
+                          setCurrentCalculation({
+                            ...currentCalculation,
+                            areaSquareFootage: value === '' ? '' : numValue,
+                          });
+                        }
+                      }}
+                      className="block w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                      placeholder="Enter area square footage"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Number of Stairs</label>
+                    <input
+                      type="number"
+                      value={currentCalculation.numberOfStairs || ''}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        const numValue = Number(value);
+                        if (value === '' || numValue >= 0) {
+                          setCurrentCalculation({
+                            ...currentCalculation,
+                            numberOfStairs: value === '' ? '' : numValue,
+                          });
+                        }
+                      }}
+                      className="block w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                      placeholder="Enter number of stairs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Number of Posts</label>
+                    <input
+                      type="number"
+                      value={currentCalculation.numberOfPosts || ''}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        const numValue = Number(value);
+                        if (value === '' || numValue >= 0) {
+                          setCurrentCalculation({
+                            ...currentCalculation,
+                            numberOfPosts: value === '' ? '' : numValue,
+                          });
+                        }
+                      }}
+                      className="block w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                      placeholder="Enter number of posts"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Railing Length (Feet)</label>
+                    <input
+                      type="number"
+                      value={currentCalculation.railingLengthFeet || ''}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        const numValue = Number(value);
+                        if (value === '' || numValue >= 0) {
+                          setCurrentCalculation({
+                            ...currentCalculation,
+                            railingLengthFeet: value === '' ? '' : numValue,
+                          });
+                        }
+                      }}
+                      className="block w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                      placeholder="Enter railing length"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Number of Spindles</label>
+                    <input
+                      type="number"
+                      value={currentCalculation.numberOfSpindles || ''}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        const numValue = Number(value);
+                        if (value === '' || numValue >= 0) {
+                          setCurrentCalculation({
+                            ...currentCalculation,
+                            numberOfSpindles: value === '' ? '' : numValue,
+                          });
+                        }
+                      }}
+                      className="block w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                      placeholder="Enter number of spindles"
+                    />
+                  </div>
+                </>
+              )}
 
               <div className="flex justify-end">
                 <button
                   type="submit"
                   disabled={caluculationLoading}
-                  className="px-3 py-1 bg-[#C49C3C]  text-white rounded flex items-center
-            focus:outline-none focus:ring-2 focus:ring-offset-2  transition-colors
-           disabled:cursor-not-allowed text-sm"
+                  className="px-3 py-1 bg-[#C49C3C] text-white rounded flex items-center
+                  focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors
+                  disabled:cursor-not-allowed text-sm"
                 >
                   {isEditing ? <Pencil size={18} /> : <Plus size={18} />}
-
                   {caluculationLoading ? 'Adding...' : ''}
                 </button>
               </div>
@@ -840,8 +1049,14 @@ export default function CalculatorView() {
               <div className="relative">
                 <input
                   type="number"
-                  value={discountValue}
-                  onChange={(e) => setDiscountValue(Number(e.target.value))}
+                  value={discountValue ?? ''}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    const numValue = Number(value);
+                    if (value === '' || numValue >= 0) {
+                      setDiscountValue(value === '' ? null : numValue);
+                    }
+                  }}
                   className="block w-full rounded border border-gray-300 px-2 py-1.5 text-sm"
                   placeholder={discountType === 'FLAT' ? 'Amount' : 'Percentage'}
                 />

@@ -94,11 +94,12 @@ export interface ClientInfo {
   otherPhone?: string;
   email?: string;
   notes?: string;
+  units?: string;
 }
 
 export interface CalculationRow {
   serviceType: ServiceType;
-  units: number;
+  units: number | '';
   rate?: number;
   subtotal?: number;
   setupMinutes?: number;

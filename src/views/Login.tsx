@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { Lock, Mail } from 'lucide-react';
 import { authAPI } from '../services/api';
 import useAuthStore from '../store/authStore';
-import { toast } from 'react-toastify';
 
 export const LoginView = () => {
   const [email, setEmail] = useState('');
@@ -24,7 +23,6 @@ export const LoginView = () => {
       }
 
       setAuth(response.data, response.data.token);
-      toast.success('Login successful!');
       if (window.innerWidth < 640) {
         // sm breakpoint in Tailwind
         navigate('/menu-links');
@@ -40,7 +38,7 @@ export const LoginView = () => {
   };
 
   return (
-    <div className="min-h-screen flex  flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 gap-10">
+    <div className="md:min-h-screen flex  flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 gap-10">
       <div>
         <img
           src="https://simcoehomesolutions.ca/wp-content/uploads/2025/02/Untitled-design-2024-09-24T011029.623-1-1-1.png"

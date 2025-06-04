@@ -29,7 +29,7 @@ export const MobileMenuLinks = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center">
+    <div className="md:min-h-screen bg-white flex items-center justify-center">
       <div className="w-full max-w-md">
         <div className="relative z-10 px-6 py-8">
           {/* Header Section */}

@@ -155,6 +155,36 @@ export const quoteAPI = {
     const response = await api.delete(`/quote/${id}`);
     return response.data;
   },
+
+  // setting
+  getQuotesSettings: async (params: params) => {
+    const response = await api.get(
+      `/quote/config/list?page=${params.page}&limit=${params.limit}&text=${
+        params.search ?? ''
+      }&userId=${
+        params?.userId ??
+        (() => {
+          const userStr = localStorage.getItem('user');
+          try {
+            return userStr ? JSON.parse(userStr).id : undefined;
+          } catch {
+            return undefined;
+          }
+        })()
+      }`
+    );
+    return response.data;
+  },
+
+  createQuoteSettings: async (quoteData: any) => {
+    const response = await api.post('/quote/config', quoteData);
+    return response.data;
+  },
+
+  updateQuoteSettings: async (id: string, quoteData: any) => {
+    const response = await api.put(`/quote/config/${id}`, quoteData);
+    return response.data;
+  },
 };
 
 export default api;

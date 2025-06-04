@@ -30,6 +30,7 @@ interface Quote {
     province: string;
     postalCode: string;
     otherPhone: string;
+    units: string
   };
   user: {
     name: string;
@@ -132,13 +133,41 @@ export const QuotesView = () => {
         useCORS: true,
         logging: false,
         backgroundColor: '#ffffff',
+        width: content.offsetWidth,
+        height: content.offsetHeight,
+        windowWidth: content.scrollWidth,
+        windowHeight: content.scrollHeight,
       });
 
-      const imgWidth = 208; // A4 width in mm
+      // Calculate dimensions to fit A4
+      const imgWidth = 210; // A4 width in mm
+      const pageHeight = 297; // A4 height in mm
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
+      
       const pdf = new jsPDF('p', 'mm', 'a4');
-      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, imgWidth, imgHeight);
+      
+      // If content is taller than A4, split into multiple pages
+      let heightLeft = imgHeight;
+      let position = 0;
+      let page = 1;
+
+      while (heightLeft > 0) {
+        pdf.addImage(
+          canvas.toDataURL('image/png'),
+          'PNG',
+          0,
+          position,
+          imgWidth,
+          imgHeight
+        );
+        heightLeft -= pageHeight;
+        
+        if (heightLeft > 0) {
+          pdf.addPage();
+          position -= pageHeight;
+          page++;
+        }
+      }
 
       // Generate filename with quote ID and date
       const fileName = `quote-${invoiceData?.invoice}-${
@@ -221,7 +250,7 @@ export const QuotesView = () => {
             )}
             <p className="text-sm pt-2">
               <span className="text-sm text-gray-500">Address:</span>{' '}
-              {invoiceData.clientInfo.address}, {invoiceData.clientInfo.city},
+             {invoiceData.clientInfo?.units} {invoiceData.clientInfo.address}, {invoiceData.clientInfo.city},
               {invoiceData.clientInfo.postalCode}
             </p>
             {invoiceData.clientInfo?.notes && (
