@@ -6,7 +6,6 @@ import {
   Trash2,
   User,
   MapPin,
-  Download,
   Phone,
   Calendar,
   Pencil,
@@ -15,9 +14,10 @@ import { params } from "../types";
 import { toast } from "react-toastify";
 import { formatDateData } from "../utils/string";
 import { useNavigate } from "react-router-dom";
-import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
 import useAuthStore from "../store/authStore";
+import QuotePDF from "../components/QuotePDF";
+import LoadMore from "../components/LoadMore";
+import DeleteConfirmationDialog from "../components/DeleteConfirmationDialog";
 
 interface Quote {
   id: string;
@@ -72,7 +72,6 @@ export const Quotes = () => {
   const { user } = useAuthStore();
   const isAdmin = user?.role === "admin";
 
-  // const [isLoadingUsers, setIsLoadingUsers] = useState(false);
   // Add state for delete confirmation
   const [deleteDialog, setDeleteDialog] = useState<{
     isOpen: boolean;
@@ -86,7 +85,6 @@ export const Quotes = () => {
   // Add function to fetch users
   const fetchUsers = async () => {
     try {
-      // setIsLoadingUsers(true);
       const response = await userAPI.list({ page: 1, limit: 100 }); // Fetch up to 100 users
       setUsers(response.data);
     } catch (error) {
@@ -219,185 +217,28 @@ export const Quotes = () => {
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchTerm(value);
-    setPage(1);
-    // getQuotes(1, ITEMS_PER_PAGE, searchTerm);
-    // debouncedSearch(value);
   };
+
   // Handle user filter change
   const handleUserChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value;
     setSelectedUser(value);
-    setPage(1);
-    console.log("Selected user:", value);
-    // getQuotes(page, ITEMS_PER_PAGE);
   };
 
+  // Add debounced search effect
   useEffect(() => {
-    getQuotes(page, ITEMS_PER_PAGE);
+    const timer = setTimeout(() => {
+      setPage(1);
+      getQuotes(1, ITEMS_PER_PAGE);
+    }, 500); // 500ms debounce
+
+    return () => clearTimeout(timer);
   }, [searchTerm, selectedUser]);
 
-  const handleDownloadPDF = async (quote: Quote) => {
-    try {
-      // Create a temporary container
-      const tempDiv = document.createElement("div");
-      tempDiv.style.position = "absolute";
-      tempDiv.style.left = "-9999px";
-      tempDiv.style.background = "white";
-      tempDiv.style.width = "800px"; // Set a fixed width for better scaling
-      document.body.appendChild(tempDiv);
-
-      // Add content to the temporary container
-      tempDiv.innerHTML = `
-        <div class="max-w-3xl mx-auto bg-white">
-          <div class="bg-[#C49C3C] p-4 text-white">
-            <h1 class="text-xl font-bold">Quote</h1>
-          </div>
-          
-          <div class="border-b p-4">
-            <div class="flex justify-between">
-              <div>
-                <h2 class="text-sm text-gray-500">Quote ID</h2>
-                <p class="text-sm font-medium">${quote.invoice}</p>
-              </div>
-              <div class="text-right">
-                <h2 class="text-sm text-gray-500">Date Issued</h2>
-                <p class="text-sm font-medium">${new Date(
-                  quote.createdAt
-                ).toLocaleDateString()}</p>
-              </div>
-            </div>
-          </div>
-  
-          <div class="p-4 border-b">
-            <div class="grid grid-cols-2">
-              <div>
-                <h2 class="text-sm text-gray-500 mb-2">Bill To:</h2>
-                <p class="text-sm font-medium">
-                  ${quote.clientInfo.firstName} ${quote.clientInfo.lastName}
-                </p>
-                <p class="text-sm">Phone: ${quote.clientInfo.phoneNumber}</p>
-                <p class="text-sm">Email: ${quote.clientInfo.email || ""}</p>
-                <p class="text-sm">Address: ${quote.clientInfo.address}</p>
-              </div>
-              <div class="text-right">
-                <h2 class="text-sm text-gray-500 mb-2">From:</h2>
-                <p class="text-sm font-medium">${quote.user.name}</p>
-                <p class="text-sm">Phone: ${quote.user.phoneNumber}</p>
-                <p class="text-sm">Email: ${quote.user.email}</p>
-              </div>
-            </div>
-          </div>
-  
-          <div class="p-4">
-            <table class="w-full">
-              <thead>
-                <tr class="bg-gray-50">
-                  <th class="text-left p-2">Service Type</th>
-                  <th class="text-left p-2">QTY</th>
-                  <th class="text-right p-2">Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${quote.services
-                  .map(
-                    (service) => `
-                  <tr>
-                    <td class="p-2">${service.serviceType.replace(
-                      /_/g,
-                      " "
-                    )}</td>
-                    <td class="p-2">${service.units}</td>
-                    <td class="p-2 text-right">$${service.total.toFixed(2)}</td>
-                  </tr>
-                `
-                  )
-                  .join("")}
-              </tbody>
-            </table>
-          </div>
-  
-          <div class="p-4 bg-gray-50">
-            <div class="max-w-xs ml-auto">
-              <div class="flex justify-between py-2">
-                <span class="text-sm text-gray-500">Subtotal</span>
-                <span class="text-sm font-medium">$${quote.subtotal.toFixed(
-                  2
-                )}</span>
-              </div>
-              <div class="flex justify-between py-2">
-                <span class="text-sm text-gray-500">Discount</span>
-                <span class="text-sm font-medium">-$${quote.discount.flat.toFixed(
-                  2
-                )}</span>
-              </div>
-              <div class="flex justify-between py-2">
-                <span class="text-sm text-gray-500">Tax</span>
-                <span class="text-sm font-medium">$${quote.taxValue.toFixed(
-                  2
-                )}</span>
-              </div>
-              <div class="flex justify-between py-2 border-t mt-2">
-                <span class="font-medium">Total</span>
-                <span class="font-bold">$${quote.total.toFixed(2)}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      `;
-
-      // Generate PDF
-      const canvas = await html2canvas(tempDiv, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: "#ffffff",
-        width: tempDiv.offsetWidth,
-        height: tempDiv.offsetHeight,
-        windowWidth: tempDiv.scrollWidth,
-        windowHeight: tempDiv.scrollHeight,
-      });
-
-      // Calculate dimensions to fit A4
-      const imgWidth = 210; // A4 width in mm
-      const pageHeight = 297; // A4 height in mm
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-      const pdf = new jsPDF("p", "mm", "a4");
-      
-      // If content is taller than A4, split into multiple pages
-      let heightLeft = imgHeight;
-      let position = 0;
-
-      while (heightLeft > 0) {
-        pdf.addImage(
-          canvas.toDataURL("image/png"),
-          "PNG",
-          0,
-          position,
-          imgWidth,
-          imgHeight
-        );
-        heightLeft -= pageHeight;
-        
-        if (heightLeft > 0) {
-          pdf.addPage();
-          position -= pageHeight;
-        }
-      }
-
-      // Cleanup
-      document.body.removeChild(tempDiv);
-
-      // Save PDF
-      const fileName = `quote-${quote.id}-${
-        new Date().toISOString().split("T")[0]
-      }.pdf`;
-      pdf.save(fileName);
-    } catch (error) {
-      console.error("Failed to generate PDF:", error);
-      toast.error("Failed to generate PDF");
-    }
-  };
+  // Initial load
+  useEffect(() => {
+    getQuotes(1, ITEMS_PER_PAGE);
+  }, []);
 
   return (
     <div className="px-2">
@@ -483,7 +324,7 @@ export const Quotes = () => {
                                 e.target.value as QuoteStatus
                               )
                             }
-                            className={`text-sm rounded px-2 py-1 border cursor-pointer ${
+                            className={`text-sm rounded px-2 py-1 border cursor-pointer w-[60%] ml-auto block ${
                               quote.status === "ACCEPTED"
                                 ? "bg-green-50 text-green-700 border-green-200"
                                 : quote.status === "REJECTED"
@@ -491,9 +332,10 @@ export const Quotes = () => {
                                 : "bg-yellow-50 text-yellow-700 border-yellow-200"
                             }`}
                           >
-                            <option value="PENDING">Pending</option>
-                            <option value="ACCEPTED">Accept</option>
-                            <option value="REJECTED">Reject</option>
+                            <option value="QUOTE_NOT_SENT">Pending - Formal Quote not sent</option>
+                            <option value="PENDING">Quote Sent - Pending Approval </option>
+                            <option value="ACCEPTED">Approved </option>
+                            <option value="REJECTED">Rejected</option>
                           </select>
                         ) : (
                           <span
@@ -563,7 +405,6 @@ export const Quotes = () => {
                         >
                           <Eye className="w-4 h-4" />
                         </button>
-                        {isAdmin && (
                           <>
                             <button
                               onClick={() => handleEdituote(quote)}
@@ -571,14 +412,8 @@ export const Quotes = () => {
                             >
                               <Pencil className="w-4 h-4" />
                             </button>
-                            <button
-                              onClick={() => handleDownloadPDF(quote)}
-                              className="flex items-center px-3 py-1 bg-[#C49C3C] text-white text-sm font-medium rounded transition-colors duration-200"
-                            >
-                              <Download className="w-4 h-4" />
-                            </button>
+                            <QuotePDF quote={quote} />
                           </>
-                        )}
                       </div>
                       {isAdmin && (
                         <button
@@ -597,102 +432,23 @@ export const Quotes = () => {
 
           {/* Load More Section */}
           <div className="flex justify-center py-6">
-            {isLoading ? (
-              <div className="flex items-center space-x-2">
-                <svg
-                  className="animate-spin h-5 w-5 text-[#C49C3C]"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
-                </svg>
-                <span className="text-sm text-gray-600">Loading...</span>
-              </div>
-            ) : hasMore ? (
-              <button
-                onClick={loadMore}
-                className="px-6 py-2 bg-[#C49C3C] text-white text-sm font-medium rounded-md  transition-colors duration-200"
-              >
-                Load More
-              </button>
-            ) : quotes.length > 0 ? (
-              <p className="text-sm text-gray-600">No more quotes to load</p>
-            ) : (
-              <p className="text-sm text-gray-600">No quotes found</p>
-            )}
+            <LoadMore
+              isLoading={isLoading}
+              hasMore={hasMore}
+              onLoadMore={loadMore}
+              itemsCount={quotes.length}
+            />
           </div>
 
           {/* Delete Confirmation Dialog */}
-          {deleteDialog.isOpen && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-              <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">
-                  Delete Quote
-                </h3>
-                <p className="text-sm text-gray-500 mb-4">
-                  Are you sure you want to delete this quote? This action cannot
-                  be undone.
-                </p>
-                <div className="flex justify-end gap-3">
-                  <button
-                    onClick={() =>
-                      setDeleteDialog({ isOpen: false, quoteId: null })
-                    }
-                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
-                    disabled={isDeleting}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleDeleteConfirm}
-                    disabled={isDeleting}
-                    className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-                  >
-                    {isDeleting ? (
-                      <>
-                        <svg
-                          className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                        >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                          ></circle>
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                          ></path>
-                        </svg>
-                        Deleting...
-                      </>
-                    ) : (
-                      "Delete"
-                    )}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
+          <DeleteConfirmationDialog
+            isOpen={deleteDialog.isOpen}
+            isDeleting={isDeleting}
+            onClose={() => setDeleteDialog({ isOpen: false, quoteId: null })}
+            onConfirm={handleDeleteConfirm}
+            title="Delete Quote"
+            message="Are you sure you want to delete this quote? This action cannot be undone."
+          />
         </div>
       </div>
     </div>

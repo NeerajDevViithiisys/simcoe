@@ -133,100 +133,75 @@ export default function CalculatorView() {
 
   // Add Google Places Autocomplete
   useEffect(() => {
-    let autocomplete: google.maps.places.Autocomplete | null = null;
-    let script: HTMLScriptElement | null = null;
     let isScriptLoaded = false;
+    let script: HTMLScriptElement | null = null;
+    let autocomplete: google.maps.places.Autocomplete | null = null;
+    let mounted = true;
 
     const initializeAutocomplete = () => {
-      // Wait for the next tick to ensure the input is rendered
-      setTimeout(() => {
-        const input = document.getElementById('address-input') as HTMLInputElement;
-        if (!input) return;
+      if (!mounted) return;
+      
+      try {
+        setTimeout(() => {
+          if (!mounted) return;
+          
+          const input = document.getElementById('address-input') as HTMLInputElement;
+          if (!input) return;
 
-        // Check if Google Maps API is fully loaded
-        if (!window.google?.maps?.places?.Autocomplete) {
-          console.warn('Google Maps API not fully loaded yet');
-          return;
-        }
+          autocomplete = new google.maps.places.Autocomplete(input, {
+            types: ['address'],
+            componentRestrictions: { country: 'ca' },
+          });
 
-        try {
-          // Only initialize if not already initialized
-          if (!autocomplete) {
-            autocomplete = new window.google.maps.places.Autocomplete(input, {
-              types: ['address'],
-              componentRestrictions: { country: 'ca' },
-              fields: ['address_components', 'formatted_address'],
-            });
+          autocomplete.addListener('place_changed', () => {
+            if (!mounted) return;
+            
+            const place = autocomplete?.getPlace();
+            if (!place) return;
 
-            // Prevent form submission on enter
-            input.addEventListener('keydown', (e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
+            const addressComponents = place.address_components || [];
+            let streetNumber = '';
+            let route = '';
+            let city = '';
+            let province = '';
+            let postalCode = '';
+
+            for (const component of addressComponents) {
+              const types = component.types;
+              if (types.includes('street_number')) {
+                streetNumber = component.long_name;
+              } else if (types.includes('route')) {
+                route = component.long_name;
+              } else if (types.includes('locality')) {
+                city = component.long_name;
+              } else if (types.includes('administrative_area_level_1')) {
+                province = component.short_name;
+              } else if (types.includes('postal_code')) {
+                postalCode = component.long_name;
               }
-            });
+            }
 
-            autocomplete.addListener('place_changed', () => {
-              const place = autocomplete?.getPlace();
-
-              if (!place?.address_components) {
-                console.warn('No address components found in selected place');
-                return;
-              }
-
-              let streetNumber = '';
-              let streetName = '';
-              let city = '';
-              let province = '';
-              let postalCode = '';
-              let units = '';
-              console.log(place)
-
-              for (const component of place.address_components) {
-                const types = component.types;
-
-                if (types.includes('street_number')) {
-                  streetNumber = component.long_name;
-                }
-                if (types.includes('route')) {
-                  streetName = component.long_name;
-                }
-                if (types.includes('locality')) {
-                  city = component.long_name;
-                }
-                if (types.includes('administrative_area_level_1')) {
-                  province = component.short_name;
-                }
-                if (types.includes('postal_code')) {
-                  postalCode = component.long_name;
-                }
-                if (types.includes('subpremise')) {
-                  units = component.long_name.replace(/^(apt\.?|suite|unit)\s*/i, '').trim();
-                }
-              }
-              // Preserve existing client info while updating address fields
-              setClientInfo((prevInfo) => ({
-                ...prevInfo,
-                address: units
-                ? `${units}, ${streetNumber} ${streetName}`.trim()
-                : `${streetNumber} ${streetName}`.trim(),
-                city,
-                province,
-                postalCode,
-                units
-              }));
-            });
-          }
-        } catch (error) {
-          console.error('Error initializing Google Places Autocomplete:', error);
-        }
-      }, 0);
+            const address = `${streetNumber} ${route}`.trim();
+            setClientInfo(prev => ({
+              ...prev,
+              address,
+              city,
+              province,
+              postalCode,
+            }));
+          });
+        }, 0);
+      } catch (error) {
+        console.error('Error initializing Google Places Autocomplete:', error);
+      }
     };
 
     const loadGoogleMapsScript = () => {
+      if (!mounted) return;
+      
       // Check if script is already loaded
       if (document.querySelector('script[src*="maps.googleapis.com"]')) {
         isScriptLoaded = true;
-        // Add a small delay to ensure Google Maps API is fully initialized
         setTimeout(initializeAutocomplete, 100);
         return;
       }
@@ -244,17 +219,17 @@ export default function CalculatorView() {
         script.defer = true;
 
         script.addEventListener('load', () => {
+          if (!mounted) return;
           isScriptLoaded = true;
-          // Add a small delay to ensure Google Maps API is fully initialized
           setTimeout(() => {
-            resolve();
+            if (mounted) resolve();
           }, 100);
         });
 
         script.addEventListener('error', (error) => {
           console.error('Error loading Google Maps script:', error);
           isScriptLoaded = false;
-          reject(error);
+          if (mounted) reject(error);
         });
 
         document.head.appendChild(script);
@@ -263,7 +238,7 @@ export default function CalculatorView() {
       // Initialize autocomplete after script loads
       loadScript
         .then(() => {
-          initializeAutocomplete();
+          if (mounted) initializeAutocomplete();
         })
         .catch((error) => {
           console.error('Failed to load Google Maps script:', error);
@@ -273,12 +248,16 @@ export default function CalculatorView() {
     loadGoogleMapsScript();
 
     return () => {
+      mounted = false;
       if (autocomplete) {
         google.maps.event.clearInstanceListeners(autocomplete);
         autocomplete = null;
       }
+      if (script && script.parentNode) {
+        script.parentNode.removeChild(script);
+      }
     };
-  }, []); // Add showClientDialog as a dependency
+  }, []); // Empty dependency array since we only want to run this once
 
   const formatCurrency = (amount: number) => {
     return amount.toLocaleString();
