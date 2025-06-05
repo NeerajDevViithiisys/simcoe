@@ -25,6 +25,25 @@ declare global {
   }
 }
 
+interface ServiceData {
+  serviceType: ServiceType;
+  units: number;
+  subtotal: number;
+  hourlyCrewCharge?: number;
+  rate?: number;
+  setupMinutes: number;
+  perUnitMinutes: number;
+  numberOfPersons: number;
+  totalTimeMinutes: number;
+  totalTimeHours: number;
+  calendarSlotHours: number;
+  areaSquareFootage?: number;
+  numberOfStairs?: number;
+  numberOfPosts?: number;
+  railingLengthFeet?: number;
+  numberOfSpindles?: number;
+}
+
 export default function CalculatorView() {
   const { user } = useAuthStore();
   const [caluculationLoading, setCaluculationLoading] = useState(false);
@@ -63,26 +82,23 @@ export default function CalculatorView() {
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isDiscountDropdownOpen, setIsDiscountDropdownOpen] = useState(false);
-  const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({});
+  const [isFormSubmitted, setIsFormSubmitted] = useState(false);
 
   const location = useLocation();
   const fetchQuoteData = location.state;
 
-  // Now you can access the passed data
-  // console.log('Quote data:', fetchQuoteData);
+  // Add this state for tracking touched fields
+  const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     const fetchQuote = async () => {
       try {
         setIsLoading(true);
         if (!fetchQuoteData?.id) return;
-        // Provide default values for the missing arguments (e.g., limit and offset)
         const response = await quoteAPI.getQuote(fetchQuoteData?.id);
         if (response.data.length != 0) {
-          // console.log('Fetched quote data:', response.data);
           const quote = response.data;
 
-          // Fill the form with fetched data
           setClientInfo({
             firstName: quote.clientInfo.firstName || '',
             lastName: quote.clientInfo.lastName || '',
@@ -97,14 +113,12 @@ export default function CalculatorView() {
             notes: quote.clientInfo.notes || '',
           });
 
-          // Set calculations
-          // Set calculations
           setCalculations(
-            quote.services.map((service: any) => ({
+            quote.services.map((service: ServiceData) => ({
               ...service,
               serviceType: service.serviceType,
-              units: service.units,
-              subtotal: service.total || service.subtotal || 0,
+              units: service.units || 0,
+              subtotal: service.subtotal || 0,
               rate: service.hourlyCrewCharge || service.rate || 0,
               setupMinutes: service.setupMinutes || 0,
               perUnitMinutes: service.perUnitMinutes || 0,
@@ -115,7 +129,6 @@ export default function CalculatorView() {
             }))
           );
 
-          // Set discount
           setDiscountType(quote.discount.percentage > 0 ? 'PERCENTAGE' : 'FLAT');
           setDiscountValue(
             quote.discount.percentage > 0 ? quote.discount.percentage : quote.discount.flat
@@ -140,7 +153,7 @@ export default function CalculatorView() {
 
     const initializeAutocomplete = () => {
       if (!mounted) return;
-      
+
       try {
         const input = document.getElementById('address-input') as HTMLInputElement;
         if (!input) {
@@ -166,7 +179,7 @@ export default function CalculatorView() {
 
         autocomplete.addListener('place_changed', () => {
           if (!mounted) return;
-          
+
           const place = autocomplete?.getPlace();
           if (!place || !place.address_components) {
             console.error('Invalid place data received');
@@ -196,7 +209,7 @@ export default function CalculatorView() {
           }
 
           const address = `${streetNumber} ${route}`.trim();
-          setClientInfo(prev => ({
+          setClientInfo((prev) => ({
             ...prev,
             address,
             city,
@@ -209,12 +222,11 @@ export default function CalculatorView() {
         input.addEventListener('input', (e) => {
           if (!mounted) return;
           const target = e.target as HTMLInputElement;
-          setClientInfo(prev => ({
+          setClientInfo((prev) => ({
             ...prev,
-            address: target.value
+            address: target.value,
           }));
         });
-
       } catch (error) {
         console.error('Error initializing Google Places Autocomplete:', error);
       }
@@ -222,8 +234,7 @@ export default function CalculatorView() {
 
     const loadGoogleMapsScript = () => {
       if (!mounted) return;
-      
-      
+
       // Check if script is already loaded
       if (document.querySelector('script[src*="maps.googleapis.com"]')) {
         isScriptLoaded = true;
@@ -301,7 +312,20 @@ export default function CalculatorView() {
   };
 
   const handleEditService = (index: number) => {
-    setCurrentCalculation(calculations[index]);
+    const calculation = calculations[index] as ServiceData;
+    setCurrentCalculation({
+      serviceType: calculation.serviceType,
+      units: calculation.units || '',
+      ...(calculation.serviceType === ServiceType.WOOD_POWERWASHING
+        ? {
+            areaSquareFootage: calculation.areaSquareFootage || '',
+            numberOfStairs: calculation.numberOfStairs || '',
+            numberOfPosts: calculation.numberOfPosts || '',
+            railingLengthFeet: calculation.railingLengthFeet || '',
+            numberOfSpindles: calculation.numberOfSpindles || '',
+          }
+        : {}),
+    });
     setEditingIndex(index);
     setIsEditing(true);
   };
@@ -413,9 +437,8 @@ export default function CalculatorView() {
   };
 
   const subtotal = calculations.reduce((sum, calc) => sum + (calc.subtotal ?? 0), 0);
-  const discount = discountType === 'FLAT' 
-    ? (discountValue ?? 0) 
-    : ((subtotal * (discountValue ?? 0)) / 100);
+  const discount =
+    discountType === 'FLAT' ? discountValue ?? 0 : (subtotal * (discountValue ?? 0)) / 100;
   const tax = (subtotal - discount) * 0.13;
   const total = subtotal - discount + tax;
 
@@ -440,6 +463,18 @@ export default function CalculatorView() {
       serviceType: ServiceType.EXTERIOR_WINDOW_CLEANING,
       units: '',
     });
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setClientInfo((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+    setTouchedFields((prev) => ({
+      ...prev,
+      [name]: true,
+    }));
   };
 
   const handleDialogClose = () => {
@@ -478,8 +513,8 @@ export default function CalculatorView() {
             <h3 className="text-lg font-medium text-gray-900 mb-2">
               {fetchQuoteData?.id ? 'Quote Updated!' : 'Quote Created!'}
             </h3>
-            <button 
-              className='px-6 py-1 rounded bg-[#C49C3C] text-white mt-4' 
+            <button
+              className="px-6 py-1 rounded bg-[#C49C3C] text-white mt-4"
               onClick={handleDialogClose}
             >
               OK
@@ -491,17 +526,7 @@ export default function CalculatorView() {
   };
 
   const submitQuoteData = async () => {
-    // Mark all fields as touched
-    setTouchedFields({
-      firstName: true,
-      address: true,
-      city: true,
-      province: true,
-      postalCode: true,
-      phoneNumber: true,
-      email: true,
-    });
-
+    setIsFormSubmitted(true);
     const validation = validateForm();
     if (!validation.isValid) {
       // Show all validation errors
@@ -562,6 +587,8 @@ export default function CalculatorView() {
       }
       console.log('Quote submitted successfully:', response);
       setShowSuccessDialog(true);
+      setIsFormSubmitted(false);
+      setTouchedFields({});
     } catch (error) {
       console.error('Failed to submit quote:', error);
       toast.error('Failed to submit quote. Please try again.');
@@ -580,8 +607,8 @@ export default function CalculatorView() {
 
   // Update the requiredFieldClass function to consider touched state
   const getInputClassName = (fieldName: string, value: string) => {
-    const isTouched = touchedFields[fieldName];
     const isEmpty = !value.trim();
+    const isTouched = touchedFields[fieldName] || isFormSubmitted;
     const isInvalid = isTouched && isEmpty;
 
     return `block w-full rounded border ${
@@ -619,8 +646,9 @@ export default function CalculatorView() {
                 <label className="block text-xs font-medium text-gray-500 mb-1">First Name*</label>
                 <input
                   type="text"
+                  name="firstName"
                   value={clientInfo.firstName}
-                  onChange={(e) => setClientInfo({ ...clientInfo, firstName: e.target.value })}
+                  onChange={handleInputChange}
                   className={getInputClassName('firstName', clientInfo.firstName)}
                   placeholder="Enter first name"
                 />
@@ -819,7 +847,9 @@ export default function CalculatorView() {
               ) : (
                 <>
                   <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1">Area Square Footage</label>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">
+                      Area Square Footage
+                    </label>
                     <input
                       type="number"
                       value={currentCalculation.areaSquareFootage || ''}
@@ -838,7 +868,9 @@ export default function CalculatorView() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1">Number of Stairs</label>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">
+                      Number of Stairs
+                    </label>
                     <input
                       type="number"
                       value={currentCalculation.numberOfStairs || ''}
@@ -857,7 +889,9 @@ export default function CalculatorView() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1">Number of Posts</label>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">
+                      Number of Posts
+                    </label>
                     <input
                       type="number"
                       value={currentCalculation.numberOfPosts || ''}
@@ -876,7 +910,9 @@ export default function CalculatorView() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1">Railing Length (Feet)</label>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">
+                      Railing Length (Feet)
+                    </label>
                     <input
                       type="number"
                       value={currentCalculation.railingLengthFeet || ''}
@@ -895,7 +931,9 @@ export default function CalculatorView() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1">Number of Spindles</label>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">
+                      Number of Spindles
+                    </label>
                     <input
                       type="number"
                       value={currentCalculation.numberOfSpindles || ''}

@@ -192,12 +192,7 @@ export const Quotes = () => {
     try {
       setIsDeleting(true);
       await quoteAPI.deleteQuote(deleteDialog.quoteId);
-
-      // Update local state
-      setQuotes((prevQuotes) =>
-        prevQuotes.filter((quote) => quote.id !== deleteDialog.quoteId)
-      );
-
+      getQuotes(page, ITEMS_PER_PAGE);
       toast.success("Quote deleted successfully");
     } catch (error) {
       console.error("Failed to delete quote:", error);
@@ -351,7 +346,7 @@ export const Quotes = () => {
                           </span>
                         )}
 
-                        <h6 className="text-xs text-right pt-2 flex gap-1 items-center">
+                        <h6 className="text-xs text-right pt-2 flex gap-1 items-center justify-end">
                           <Calendar className="w-3 h-3 text-gray-400 mt-1 flex-shrink-0" />
                           <span className="pt-1">
                             {" "}
