@@ -99,7 +99,7 @@ export interface ClientInfo {
 
 export interface CalculationRow {
   serviceType: ServiceType;
-  units: number | '';
+  units?: number | '';
   rate?: number;
   subtotal?: number;
   setupMinutes?: number;
@@ -111,4 +111,82 @@ export interface CalculationRow {
   calendarSlotHours?: number;
   totalCost?: number;
   id?: string;
+}
+
+export interface Quote {
+  id: string;
+  invoice: string;
+  services: {
+    serviceType: ServiceType;
+    units: number;
+    id: string;
+    total: number;
+  }[];
+  clientInfo: {
+    firstName: string;
+    lastName: string;
+    phoneNumber: string;
+    address: string;
+    email: string;
+    notes: string;
+    city: string;
+    province: string;
+    postalCode: string;
+    otherPhone: string;
+  };
+  user: {
+    name: string;
+    email: string;
+    phoneNumber: string;
+  };
+  units: number;
+  taxValue: number;
+  setupMinutes: number;
+  perUnitMinutes: number;
+  total: number;
+  subtotal: number;
+  discount: {
+    flat: number;
+  };
+  numberOfPersons: number;
+  status?: QuoteStatus;
+  createdAt: Date;
+}
+
+
+// Add this interface
+export interface QuoteSettingsFormData {
+  serviceType: string;
+  setupMinutes?: number;
+  perUnitMinutes?: number;
+  hourlyCrewCharge?: number;
+  areaMinutes?: number;
+  stairsMinutes?: number;
+  postsMinutes?: number;
+  railingMinutes?: number;
+  spindlesMinutes?: number;
+}
+
+export interface Quote {
+  id: string;
+  serviceType: string;
+  hourlyCrewCharge: number;
+  perUnitMinutes: number;
+  setupMinutes: number;
+  areaMinutes: number | null;
+  postsMinutes: number | null;
+  railingMinutes: number | null;
+  spindlesMinutes: number | null;
+  stairsMinutes: number | null;
+  createdAt?: Date | string;
+  updatedAt?: string;
+  createdBy?: string;
+  updatedBy?: string | null;
+  deletedAt?: string | null;
+}
+
+
+export interface ViewDialogProps {
+  quote: Quote | null;
+  onClose: () => void;
 }

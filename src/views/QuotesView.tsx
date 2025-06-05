@@ -62,6 +62,8 @@ export const QuotesView = () => {
   const [isPdfMode, setIsPdfMode] = useState(false);
 
   useEffect(() => {
+    let mounted = true;
+    
     const fetchQuote = async () => {
       try {
         setIsLoading(true);
@@ -69,24 +71,32 @@ export const QuotesView = () => {
 
         if (!id) throw new Error('Quote ID is required');
 
-        // Provide default values for the missing arguments (e.g., limit and offset)
         const data = await quoteAPI.getQuote(id);
-        if (data.data.length === 0) {
-          console.log('Fetched quote data:', data.data);
-          const localData = localStorage.getItem('selectedQuote');
-          setInvoiceData(localData ? JSON.parse(localData) : null);
-        } else {
-          setInvoiceData(data.data);
+        if (mounted) {
+          if (data.data.length === 0) {
+            const localData = localStorage.getItem('selectedQuote');
+            setInvoiceData(localData ? JSON.parse(localData) : null);
+          } else {
+            setInvoiceData(data.data);
+          }
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch quote');
-        console.error('Error fetching quote:', err);
+        if (mounted) {
+          setError(err instanceof Error ? err.message : 'Failed to fetch quote');
+          console.error('Error fetching quote:', err);
+        }
       } finally {
-        setIsLoading(false);
+        if (mounted) {
+          setIsLoading(false);
+        }
       }
     };
 
     fetchQuote();
+
+    return () => {
+      mounted = false;
+    };
   }, [id]);
 
   if (isLoading) {
@@ -104,8 +114,6 @@ export const QuotesView = () => {
       </div>
     );
   }
-
-  console.log('Fetched quote data:', invoiceData);
 
   const createdDate = new Date(invoiceData?.createdAt);
   const timeAgo = createdDate ? formatDistance(createdDate, new Date(), { addSuffix: true }) : '';

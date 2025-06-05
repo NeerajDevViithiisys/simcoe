@@ -21,14 +21,9 @@ export const LoginView = () => {
       if (!response?.data || !response?.data?.token) {
         throw new Error('Invalid response from server');
       }
-
       setAuth(response.data, response.data.token);
-      if (window.innerWidth < 640) {
         // sm breakpoint in Tailwind
         navigate('/menu-links');
-      } else {
-        navigate('/');
-      }
     } catch (error) {
       // Error is already handled by the API interceptor
       console.error('Login error details:', error);
@@ -38,7 +33,7 @@ export const LoginView = () => {
   };
 
   return (
-    <div className="md:min-h-screen flex  flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 gap-10">
+    <div className="flex flex-col items-center justify-center md:pt-16 pt-12 px-4 sm:px-6 lg:px-8 gap-10">
       <div>
         <img
           src="https://simcoehomesolutions.ca/wp-content/uploads/2025/02/Untitled-design-2024-09-24T011029.623-1-1-1.png"

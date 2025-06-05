@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calculator, Users, Home, LogOut, Sparkles } from 'lucide-react';
+import { Calculator, Users, Home, LogOut, Sparkles, Settings } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
 
@@ -25,16 +25,16 @@ export const MobileMenuLinks = () => {
   const menuItems = [
     { icon: Calculator, label: 'Calculator', path: '/' },
     { icon: Home, label: 'Quotes', path: '/quotes' },
-    ...(user?.role === 'admin' ? [{ icon: Users, label: 'Users', path: '/users' }] : []),
+    ...(user?.role === 'admin' ? [{ icon: Users, label: 'Users', path: '/users' },{ icon: Settings, label: 'Settings', path: '/quotes-setting' }] : []),
   ];
 
   return (
-    <div className="md:min-h-screen bg-white flex items-center justify-center">
+    <div className="bg-white flex items-center justify-center">
       <div className="w-full max-w-md">
-        <div className="relative z-10 px-6 py-8">
+        <div className="relative z-10 px-6 md:py-8 py-3">
           {/* Header Section */}
           <div
-            className={`mb-12 text-center transition-all duration-500 ease-in-out ${
+            className={`mb-10 text-center transition-all duration-500 ease-in-out ${
               mounted ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-10'
             }`}
           >
@@ -102,7 +102,7 @@ export const MobileMenuLinks = () => {
           </div>
 
           {/* Bottom decoration */}
-          <div className="mt-12 flex justify-center">
+          <div className="mt-10 flex justify-center">
             <div className="flex space-x-2">
               {[...Array(3)].map((_, i) => (
                 <div
