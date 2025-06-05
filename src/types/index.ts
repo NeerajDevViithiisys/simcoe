@@ -99,7 +99,7 @@ export interface ClientInfo {
 
 export interface CalculationRow {
   serviceType: ServiceType;
-  units: number | '';
+  units?: number | '';
   rate?: number;
   subtotal?: number;
   setupMinutes?: number;

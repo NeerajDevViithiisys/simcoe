@@ -142,55 +142,79 @@ export default function CalculatorView() {
       if (!mounted) return;
       
       try {
-        setTimeout(() => {
+        const input = document.getElementById('address-input') as HTMLInputElement;
+        if (!input) {
+          console.error('Address input element not found');
+          return;
+        }
+
+        // Clear any existing autocomplete instance
+        if (autocomplete) {
+          google.maps.event.clearInstanceListeners(autocomplete);
+        }
+
+        // Ensure Google Maps is loaded
+        if (!window.google || !window.google.maps || !window.google.maps.places) {
+          return;
+        }
+
+        autocomplete = new google.maps.places.Autocomplete(input, {
+          types: ['address'],
+          componentRestrictions: { country: 'ca' },
+          fields: ['address_components', 'formatted_address'],
+        });
+
+        autocomplete.addListener('place_changed', () => {
           if (!mounted) return;
           
-          const input = document.getElementById('address-input') as HTMLInputElement;
-          if (!input) return;
+          const place = autocomplete?.getPlace();
+          if (!place || !place.address_components) {
+            console.error('Invalid place data received');
+            return;
+          }
 
-          autocomplete = new google.maps.places.Autocomplete(input, {
-            types: ['address'],
-            componentRestrictions: { country: 'ca' },
-          });
+          const addressComponents = place.address_components;
+          let streetNumber = '';
+          let route = '';
+          let city = '';
+          let province = '';
+          let postalCode = '';
 
-          autocomplete.addListener('place_changed', () => {
-            if (!mounted) return;
-            
-            const place = autocomplete?.getPlace();
-            if (!place) return;
-
-            const addressComponents = place.address_components || [];
-            let streetNumber = '';
-            let route = '';
-            let city = '';
-            let province = '';
-            let postalCode = '';
-
-            for (const component of addressComponents) {
-              const types = component.types;
-              if (types.includes('street_number')) {
-                streetNumber = component.long_name;
-              } else if (types.includes('route')) {
-                route = component.long_name;
-              } else if (types.includes('locality')) {
-                city = component.long_name;
-              } else if (types.includes('administrative_area_level_1')) {
-                province = component.short_name;
-              } else if (types.includes('postal_code')) {
-                postalCode = component.long_name;
-              }
+          for (const component of addressComponents) {
+            const types = component.types;
+            if (types.includes('street_number')) {
+              streetNumber = component.long_name;
+            } else if (types.includes('route')) {
+              route = component.long_name;
+            } else if (types.includes('locality')) {
+              city = component.long_name;
+            } else if (types.includes('administrative_area_level_1')) {
+              province = component.short_name;
+            } else if (types.includes('postal_code')) {
+              postalCode = component.long_name;
             }
+          }
 
-            const address = `${streetNumber} ${route}`.trim();
-            setClientInfo(prev => ({
-              ...prev,
-              address,
-              city,
-              province,
-              postalCode,
-            }));
-          });
-        }, 0);
+          const address = `${streetNumber} ${route}`.trim();
+          setClientInfo(prev => ({
+            ...prev,
+            address,
+            city,
+            province,
+            postalCode,
+          }));
+        });
+
+        // Add input event listener to handle manual input
+        input.addEventListener('input', (e) => {
+          if (!mounted) return;
+          const target = e.target as HTMLInputElement;
+          setClientInfo(prev => ({
+            ...prev,
+            address: target.value
+          }));
+        });
+
       } catch (error) {
         console.error('Error initializing Google Places Autocomplete:', error);
       }
@@ -199,35 +223,45 @@ export default function CalculatorView() {
     const loadGoogleMapsScript = () => {
       if (!mounted) return;
       
+      
       // Check if script is already loaded
       if (document.querySelector('script[src*="maps.googleapis.com"]')) {
         isScriptLoaded = true;
-        setTimeout(initializeAutocomplete, 100);
+        // Wait for the next tick to ensure Google Maps is fully initialized
+        setTimeout(initializeAutocomplete, 0);
         return;
       }
 
       // Check if script is already being loaded
-      if (isScriptLoaded) return;
+      if (isScriptLoaded) {
+        return;
+      }
 
       // Create a promise to handle script loading
       const loadScript = new Promise<void>((resolve, reject) => {
         script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${
-          import.meta.env.VITE_GOOGLE_MAPS_API_KEY
-        }&libraries=places&loading=async`;
+        const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+        if (!apiKey) {
+          console.error('Google Maps API key not found in environment variables');
+          reject(new Error('API key missing'));
+          return;
+        }
+
+        // Remove loading=async and add callback parameter
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&callback=Function.prototype`;
         script.async = true;
         script.defer = true;
 
         script.addEventListener('load', () => {
           if (!mounted) return;
           isScriptLoaded = true;
+          // Wait for the next tick to ensure Google Maps is fully initialized
           setTimeout(() => {
             if (mounted) resolve();
-          }, 100);
+          }, 0);
         });
 
         script.addEventListener('error', (error) => {
-          console.error('Error loading Google Maps script:', error);
           isScriptLoaded = false;
           if (mounted) reject(error);
         });
@@ -238,14 +272,17 @@ export default function CalculatorView() {
       // Initialize autocomplete after script loads
       loadScript
         .then(() => {
-          if (mounted) initializeAutocomplete();
+          if (mounted) {
+            initializeAutocomplete();
+          }
         })
         .catch((error) => {
           console.error('Failed to load Google Maps script:', error);
         });
     };
 
-    loadGoogleMapsScript();
+    // Delay the script loading slightly to ensure the DOM is ready
+    setTimeout(loadGoogleMapsScript, 100);
 
     return () => {
       mounted = false;
@@ -257,7 +294,7 @@ export default function CalculatorView() {
         script.parentNode.removeChild(script);
       }
     };
-  }, []); // Empty dependency array since we only want to run this once
+  }, []);
 
   const formatCurrency = (amount: number) => {
     return amount.toLocaleString();
@@ -1046,7 +1083,7 @@ export default function CalculatorView() {
             </div>
           </div>
         </div>
-        {/* Signature Card */}
+        {/* notes Card */}
         <div className="bg-white  px-4 py-6 rounded border border-[rgba(0,0,0,.1)]">
           <div className="flex flex-col gap-2">
             <div className="flex justify-between">
