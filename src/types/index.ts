@@ -153,7 +153,6 @@ export interface Quote {
   createdAt: Date;
 }
 
-
 // Add this interface
 export interface QuoteSettingsFormData {
   serviceType: string;
@@ -178,13 +177,11 @@ export interface Quote {
   railingMinutes: number | null;
   spindlesMinutes: number | null;
   stairsMinutes: number | null;
-  createdAt?: Date | string;
   updatedAt?: string;
   createdBy?: string;
   updatedBy?: string | null;
   deletedAt?: string | null;
 }
-
 
 export interface ViewDialogProps {
   quote: Quote | null;

@@ -1,8 +1,8 @@
 import React from 'react';
-import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
-import { Quote } from "../types";
-import { toast } from "react-toastify";
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
+import { Quote } from '../types';
+import { toast } from 'react-toastify';
 
 interface QuotePDFProps {
   quote: Quote;
@@ -11,11 +11,11 @@ interface QuotePDFProps {
 export const generateQuotePDF = async (quote: Quote) => {
   try {
     // Create a temporary container
-    const tempDiv = document.createElement("div");
-    tempDiv.style.position = "absolute";
-    tempDiv.style.left = "-9999px";
-    tempDiv.style.background = "white";
-    tempDiv.style.width = "800px"; // Set a fixed width for better scaling
+    const tempDiv = document.createElement('div');
+    tempDiv.style.position = 'absolute';
+    tempDiv.style.left = '-9999px';
+    tempDiv.style.background = 'white';
+    tempDiv.style.width = '800px'; // Set a fixed width for better scaling
     document.body.appendChild(tempDiv);
 
     // Add content to the temporary container
@@ -33,9 +33,7 @@ export const generateQuotePDF = async (quote: Quote) => {
             </div>
             <div class="text-right">
               <h2 class="text-sm text-gray-500">Date Issued</h2>
-              <p class="text-sm font-medium">${new Date(
-                quote.createdAt
-              ).toLocaleDateString()}</p>
+              <p class="text-sm font-medium">${new Date(quote.createdAt).toLocaleDateString()}</p>
             </div>
           </div>
         </div>
@@ -48,7 +46,7 @@ export const generateQuotePDF = async (quote: Quote) => {
                 ${quote.clientInfo.firstName} ${quote.clientInfo.lastName}
               </p>
               <p class="text-sm">Phone: ${quote.clientInfo.phoneNumber}</p>
-              <p class="text-sm">Email: ${quote.clientInfo.email || ""}</p>
+              <p class="text-sm">Email: ${quote.clientInfo.email || ''}</p>
               <p class="text-sm">Address: ${quote.clientInfo.address}</p>
             </div>
             <div class="text-right">
@@ -74,16 +72,13 @@ export const generateQuotePDF = async (quote: Quote) => {
                 .map(
                   (service) => `
                 <tr>
-                  <td class="p-2">${service.serviceType.replace(
-                    /_/g,
-                    " "
-                  )}</td>
+                  <td class="p-2">${service.serviceType.replace(/_/g, ' ')}</td>
                   <td class="p-2">${service.units}</td>
                   <td class="p-2 text-right">$${service.total.toFixed(2)}</td>
                 </tr>
               `
                 )
-                .join("")}
+                .join('')}
             </tbody>
           </table>
         </div>
@@ -92,21 +87,15 @@ export const generateQuotePDF = async (quote: Quote) => {
           <div class="max-w-xs ml-auto">
             <div class="flex justify-between py-2">
               <span class="text-sm text-gray-500">Subtotal</span>
-              <span class="text-sm font-medium">$${quote.subtotal.toFixed(
-                2
-              )}</span>
+              <span class="text-sm font-medium">$${quote.subtotal.toFixed(2)}</span>
             </div>
             <div class="flex justify-between py-2">
               <span class="text-sm text-gray-500">Discount</span>
-              <span class="text-sm font-medium">-$${quote.discount.flat.toFixed(
-                2
-              )}</span>
+              <span class="text-sm font-medium">-$${quote.discount.flat.toFixed(2)}</span>
             </div>
             <div class="flex justify-between py-2">
               <span class="text-sm text-gray-500">Tax</span>
-              <span class="text-sm font-medium">$${quote.taxValue.toFixed(
-                2
-              )}</span>
+              <span class="text-sm font-medium">$${quote.taxValue.toFixed(2)}</span>
             </div>
             <div class="flex justify-between py-2 border-t mt-2">
               <span class="font-medium">Total</span>
@@ -122,7 +111,7 @@ export const generateQuotePDF = async (quote: Quote) => {
       scale: 2,
       useCORS: true,
       logging: false,
-      backgroundColor: "#ffffff",
+      backgroundColor: '#ffffff',
       width: tempDiv.offsetWidth,
       height: tempDiv.offsetHeight,
       windowWidth: tempDiv.scrollWidth,
@@ -134,23 +123,16 @@ export const generateQuotePDF = async (quote: Quote) => {
     const pageHeight = 297; // A4 height in mm
     const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-    const pdf = new jsPDF("p", "mm", "a4");
-    
+    const pdf = new jsPDF('p', 'mm', 'a4');
+
     // If content is taller than A4, split into multiple pages
     let heightLeft = imgHeight;
     let position = 0;
 
     while (heightLeft > 0) {
-      pdf.addImage(
-        canvas.toDataURL("image/png"),
-        "PNG",
-        0,
-        position,
-        imgWidth,
-        imgHeight
-      );
+      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
       heightLeft -= pageHeight;
-      
+
       if (heightLeft > 0) {
         pdf.addPage();
         position -= pageHeight;
@@ -161,13 +143,17 @@ export const generateQuotePDF = async (quote: Quote) => {
     document.body.removeChild(tempDiv);
 
     // Save PDF
-    const fileName = `quote-${quote.id}-${
-      new Date().toISOString().split("T")[0]
+    const firstName = quote.clientInfo?.firstName || '';
+    const lastName = quote.clientInfo?.lastName || '';
+
+    const fileName = `${firstName.charAt(0).toUpperCase() + firstName.slice(1)}${
+      lastName ? ' ' + (lastName.charAt(0).toUpperCase() + lastName.slice(1)) : ''
     }.pdf`;
+
     pdf.save(fileName);
   } catch (error) {
-    console.error("Failed to generate PDF:", error);
-    toast.error("Failed to generate PDF");
+    console.error('Failed to generate PDF:', error);
+    toast.error('Failed to generate PDF');
   }
 };
 
@@ -195,4 +181,4 @@ const QuotePDF: React.FC<QuotePDFProps> = ({ quote }) => {
   );
 };
 
-export default QuotePDF; 
+export default QuotePDF;

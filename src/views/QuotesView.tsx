@@ -30,7 +30,7 @@ interface Quote {
     province: string;
     postalCode: string;
     otherPhone: string;
-    units: string
+    units: string;
   };
   user: {
     name: string;
@@ -63,7 +63,7 @@ export const QuotesView = () => {
 
   useEffect(() => {
     let mounted = true;
-    
+
     const fetchQuote = async () => {
       try {
         setIsLoading(true);
@@ -151,25 +151,18 @@ export const QuotesView = () => {
       const imgWidth = 210; // A4 width in mm
       const pageHeight = 297; // A4 height in mm
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      
+
       const pdf = new jsPDF('p', 'mm', 'a4');
-      
+
       // If content is taller than A4, split into multiple pages
       let heightLeft = imgHeight;
       let position = 0;
       let page = 1;
 
       while (heightLeft > 0) {
-        pdf.addImage(
-          canvas.toDataURL('image/png'),
-          'PNG',
-          0,
-          position,
-          imgWidth,
-          imgHeight
-        );
+        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
         heightLeft -= pageHeight;
-        
+
         if (heightLeft > 0) {
           pdf.addPage();
           position -= pageHeight;
@@ -177,9 +170,12 @@ export const QuotesView = () => {
         }
       }
 
+      const firstName = invoiceData.clientInfo?.firstName || '';
+      const lastName = invoiceData.clientInfo?.lastName || '';
+
       // Generate filename with quote ID and date
-      const fileName = `quote-${invoiceData?.invoice}-${
-        new Date().toISOString().split('T')[0]
+      const fileName = `${firstName.charAt(0).toUpperCase() + firstName.slice(1)}${
+        lastName ? ' ' + (lastName.charAt(0).toUpperCase() + lastName.slice(1)) : ''
       }.pdf`;
       pdf.save(fileName);
     } catch (error) {
@@ -258,8 +254,8 @@ export const QuotesView = () => {
             )}
             <p className="text-sm pt-2">
               <span className="text-sm text-gray-500">Address:</span>{' '}
-             {invoiceData.clientInfo?.units} {invoiceData.clientInfo.address}, {invoiceData.clientInfo.city},
-              {invoiceData.clientInfo.postalCode}
+              {invoiceData.clientInfo?.units} {invoiceData.clientInfo.address},{' '}
+              {invoiceData.clientInfo.city},{invoiceData.clientInfo.postalCode}
             </p>
             {invoiceData.clientInfo?.notes && (
               <p className="text-sm pt-2">
