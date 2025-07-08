@@ -69,6 +69,15 @@ export const authAPI = {
       throw error;
     }
   },
+  jobberLogin: async () => {
+    try {
+      const response = await api.get(`/jobber`);
+      return response.data.data;
+    } catch (error) {
+      console.error('Login API error:', error);
+      throw error;
+    }
+  },
   sendOtp: async (phoneNumber: string) => {
     const response = await api.post('/auth/otp/send', {
       otpMethod: 'SMS',

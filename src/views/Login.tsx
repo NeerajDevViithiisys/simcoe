@@ -22,8 +22,15 @@ export const LoginView = () => {
         throw new Error('Invalid response from server');
       }
       setAuth(response.data, response.data.token);
-        // sm breakpoint in Tailwind
-        navigate('/menu-links');
+
+      const responseJobber = await authAPI.jobberLogin();
+      console.log('responseJobber', responseJobber);
+      if (responseJobber) {
+        location.href = responseJobber;
+        // navigate('/menu-links');
+      }
+
+      // sm breakpoint in Tailwind
     } catch (error) {
       // Error is already handled by the API interceptor
       console.error('Login error details:', error);
