@@ -14,23 +14,17 @@ export const LoginView = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-
     try {
       const response = await authAPI.login(email, password);
-
       if (!response?.data || !response?.data?.token) {
         throw new Error('Invalid response from server');
       }
       setAuth(response.data, response.data.token);
-
       const responseJobber = await authAPI.jobberLogin();
       console.log('responseJobber', responseJobber);
       if (responseJobber) {
         location.href = responseJobber;
-        // navigate('/menu-links');
       }
-
-      // sm breakpoint in Tailwind
     } catch (error) {
       // Error is already handled by the API interceptor
       console.error('Login error details:', error);

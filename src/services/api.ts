@@ -111,6 +111,10 @@ export const userAPI = {
     const response = await api.get(`/user/${id}`);
     return response.data;
   },
+  getJobberAuth: async (params: any) => {
+    const response = await api.get(`/menu-links?code=${params.code}&state=${params.state}`);
+    return response.data;
+  },
   list: async (params: params) => {
     const response = await api.get(`/user?page=${params.page}&limit=${params.limit}`);
     return response.data;

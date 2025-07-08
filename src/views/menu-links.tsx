@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Calculator, Users, Home, LogOut, Sparkles, Settings } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
+import { userAPI } from '../services/api';
 
 // Mock auth store for demo
 
@@ -11,8 +12,24 @@ export const MobileMenuLinks = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    fetchJobberData();
     setMounted(true);
   }, []);
+
+  const fetchJobberData = async () => {
+    // Extract params from current URL
+    const jobbarData = new URLSearchParams(window.location.search);
+    const code = jobbarData.get('code');
+    const state = jobbarData.get('state');
+    const params = { code: code, state: state };
+    try {
+      await userAPI.getJobberAuth(params); // Fetch up to 100 users
+    } catch (error) {
+      console.error('Failed to fetch users:', error);
+    } finally {
+      // setIsLoadingUsers(false);
+    }
+  };
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -25,7 +42,12 @@ export const MobileMenuLinks = () => {
   const menuItems = [
     { icon: Calculator, label: 'Calculator', path: '/' },
     { icon: Home, label: 'Quotes', path: '/quotes' },
-    ...(user?.role === 'admin' ? [{ icon: Users, label: 'Users', path: '/users' },{ icon: Settings, label: 'Settings', path: '/quotes-setting' }] : []),
+    ...(user?.role === 'admin'
+      ? [
+          { icon: Users, label: 'Users', path: '/users' },
+          { icon: Settings, label: 'Settings', path: '/quotes-setting' },
+        ]
+      : []),
   ];
 
   return (
