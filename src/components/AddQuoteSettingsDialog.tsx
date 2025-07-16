@@ -46,6 +46,11 @@ export const QuoteSettingsDialog: React.FC<{
   };
 
   const handleChange = (name: string, value: string) => {
+    // If the field is description, just set the string value
+    if (name === 'description') {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+      return;
+    }
     const numValue = parseInt(value);
     setFormData((prev) => ({ ...prev, [name]: numValue }));
     if (touched[name]) {
@@ -60,11 +65,10 @@ export const QuoteSettingsDialog: React.FC<{
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     // Validate all fields
     const newErrors: Record<string, string> = {};
     Object.keys(formData).forEach((key) => {
-      if (key !== 'serviceType') {
+      if (key !== 'serviceType' && key !== 'description') {
         const value = formData[key as keyof QuoteSettingsFormData] as number;
         const error = validateField(key, value);
         if (error) {
@@ -333,7 +337,7 @@ export const QuoteSettingsDialog: React.FC<{
             <label className="block text-sm font-medium text-gray-700">Description</label>
             <textarea
               value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              onChange={(e) => handleChange('description', e.target.value)}
               className="mt-1 block w-full p-3 rounded border border-gray-300 focus:ring-0 sm:text-sm"
               rows={3}
             />
