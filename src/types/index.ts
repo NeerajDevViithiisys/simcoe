@@ -111,6 +111,12 @@ export interface CalculationRow {
   calendarSlotHours?: number;
   totalCost?: number;
   id?: string;
+  // Add these for WOOD_POWERWASHING
+  areaSquareFootage?: number;
+  numberOfStairs?: number;
+  numberOfPosts?: number;
+  railingLengthFeet?: number;
+  numberOfSpindles?: number;
 }
 
 export interface Quote {
@@ -151,6 +157,8 @@ export interface Quote {
   numberOfPersons: number;
   status?: QuoteStatus;
   createdAt: Date;
+  crewSize?: number;
+  description?: string;
 }
 
 // Add this interface
@@ -164,6 +172,8 @@ export interface QuoteSettingsFormData {
   postsMinutes?: number;
   railingMinutes?: number;
   spindlesMinutes?: number;
+  crewSize?: number;
+  description?: string;
 }
 
 export interface Quote {

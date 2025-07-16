@@ -541,19 +541,40 @@ export default function CalculatorView() {
       subtotal: subtotal,
       taxValue: tax,
       total: total,
-      services: calculations.map((calc) => ({
-        id: calc.id,
-        serviceType: calc.serviceType,
-        units: calc.units,
-        setupMinutes: calc.setupMinutes ?? 0,
-        perUnitMinutes: calc.perUnitMinutes ?? 0,
-        hourlyCrewCharge: calc.hourlyCrewCharge ?? 0,
-        numberOfPersons: calc.numberOfPersons ?? 2,
-        totalTimeMinutes: calc.totalTimeMinutes ?? 0,
-        totalTimeHours: calc.totalTimeHours ?? 0,
-        calendarSlotHours: calc.calendarSlotHours ?? 0,
-        totalCost: calc.subtotal ?? 0,
-      })),
+      services: calculations.map((calc) => {
+        if (calc.serviceType === ServiceType.WOOD_POWERWASHING) {
+          return {
+            id: calc.id,
+            serviceType: calc.serviceType,
+            areaSquareFootage: calc.areaSquareFootage ?? 0,
+            numberOfStairs: calc.numberOfStairs ?? 0,
+            numberOfPosts: calc.numberOfPosts ?? 0,
+            railingLengthFeet: calc.railingLengthFeet ?? 0,
+            numberOfSpindles: calc.numberOfSpindles ?? 0,
+            setupMinutes: calc.setupMinutes ?? 0,
+            perUnitMinutes: calc.perUnitMinutes ?? 0,
+            hourlyCrewCharge: calc.hourlyCrewCharge ?? 0,
+            numberOfPersons: calc.numberOfPersons ?? 2,
+            totalTimeMinutes: calc.totalTimeMinutes ?? 0,
+            totalTimeHours: calc.totalTimeHours ?? 0,
+            calendarSlotHours: calc.calendarSlotHours ?? 0,
+            totalCost: calc.subtotal ?? 0,
+          };
+        }
+        return {
+          id: calc.id,
+          serviceType: calc.serviceType,
+          units: calc.units,
+          setupMinutes: calc.setupMinutes ?? 0,
+          perUnitMinutes: calc.perUnitMinutes ?? 0,
+          hourlyCrewCharge: calc.hourlyCrewCharge ?? 0,
+          numberOfPersons: calc.numberOfPersons ?? 2,
+          totalTimeMinutes: calc.totalTimeMinutes ?? 0,
+          totalTimeHours: calc.totalTimeHours ?? 0,
+          calendarSlotHours: calc.calendarSlotHours ?? 0,
+          totalCost: calc.subtotal ?? 0,
+        };
+      }),
       discount: {
         flat: discount,
         percentage: discountValue,

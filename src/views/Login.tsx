@@ -21,7 +21,7 @@ export const LoginView = () => {
       }
       setAuth(response.data, response.data.token);
       const responseJobber = await authAPI.jobberLogin();
-      console.log('responseJobber', responseJobber);
+      // console.log('responseJobber', responseJobber);
       if (responseJobber) {
         location.href = responseJobber;
       }
