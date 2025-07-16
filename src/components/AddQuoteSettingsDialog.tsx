@@ -51,7 +51,7 @@ export const QuoteSettingsDialog: React.FC<{
       setFormData((prev) => ({ ...prev, [name]: value }));
       return;
     }
-    const numValue = parseInt(value);
+    const numValue = parseFloat(value);
     setFormData((prev) => ({ ...prev, [name]: numValue }));
     if (touched[name]) {
       const error = validateField(name, numValue);
@@ -286,6 +286,7 @@ export const QuoteSettingsDialog: React.FC<{
                 <label className="block text-sm font-medium text-gray-700">Per Unit Minutes</label>
                 <input
                   type="number"
+                  step="any"
                   value={formData.perUnitMinutes}
                   onChange={(e) => handleChange('perUnitMinutes', e.target.value)}
                   onBlur={() => handleBlur('perUnitMinutes')}
