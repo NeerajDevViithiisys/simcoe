@@ -42,6 +42,8 @@ interface ServiceData {
   numberOfPosts?: number;
   railingLengthFeet?: number;
   numberOfSpindles?: number;
+  description?: string;
+  crewSize?: number;
 }
 
 export default function CalculatorView() {
@@ -126,6 +128,8 @@ export default function CalculatorView() {
               totalTimeMinutes: service.totalTimeMinutes || 0,
               totalTimeHours: service.totalTimeHours || 0,
               calendarSlotHours: service.calendarSlotHours || 0,
+              description: service.description || '',
+              crewSize: service.crewSize || 0,
             }))
           );
 
@@ -363,6 +367,8 @@ export default function CalculatorView() {
         totalTimeHours: serviceData.totalTimeHours,
         calendarSlotHours: serviceData.calendarSlotHours,
         subtotal: serviceData.totalCost,
+        description: serviceData.description || '',
+        crewSize: serviceData.crewSize || 0,
         ...(currentCalculation.serviceType === ServiceType.WOOD_POWERWASHING
           ? {
               areaSquareFootage: currentCalculation.areaSquareFootage || 0,
@@ -559,6 +565,8 @@ export default function CalculatorView() {
             totalTimeHours: calc.totalTimeHours ?? 0,
             calendarSlotHours: calc.calendarSlotHours ?? 0,
             totalCost: calc.subtotal ?? 0,
+            description: calc.description ?? '',
+            crewSize: calc.crewSize ?? '',
           };
         }
         return {
@@ -573,6 +581,8 @@ export default function CalculatorView() {
           totalTimeHours: calc.totalTimeHours ?? 0,
           calendarSlotHours: calc.calendarSlotHours ?? 0,
           totalCost: calc.subtotal ?? 0,
+          description: calc.description ?? '',
+          crewSize: calc.crewSize ?? '',
         };
       }),
       discount: {

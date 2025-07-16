@@ -89,19 +89,16 @@ export const QuoteSettingsDialog: React.FC<{
         serviceType: formData.serviceType,
         description: formData.description,
         crewSize: formData.crewSize || 0,
-        ...(formData.serviceType === 'WOOD_POWERWASHING'
-          ? {
-              areaMinutes: formData.areaMinutes || 0,
-              stairsMinutes: formData.stairsMinutes || 0,
-              postsMinutes: formData.postsMinutes || 0,
-              railingMinutes: formData.railingMinutes || 0,
-              spindlesMinutes: formData.spindlesMinutes || 0,
-            }
-          : {
-              setupMinutes: formData.setupMinutes || 0,
-              perUnitMinutes: formData.perUnitMinutes || 0,
-              hourlyCrewCharge: formData.hourlyCrewCharge || 0,
-            }),
+        setupMinutes: formData.setupMinutes || 0,
+        perUnitMinutes: formData.perUnitMinutes || 0,
+        hourlyCrewCharge: formData.hourlyCrewCharge || 0,
+        ...(formData.serviceType === 'WOOD_POWERWASHING' && {
+          areaMinutes: formData.areaMinutes || 0,
+          stairsMinutes: formData.stairsMinutes || 0,
+          postsMinutes: formData.postsMinutes || 0,
+          railingMinutes: formData.railingMinutes || 0,
+          spindlesMinutes: formData.spindlesMinutes || 0,
+        }),
       };
       await onSubmit(payload);
       onClose();
@@ -135,7 +132,7 @@ export const QuoteSettingsDialog: React.FC<{
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 overflow-y-auto max-h-[500px]">
           <div>
             <label className="block text-sm font-medium text-gray-700">Service Type</label>
             <div className="relative mt-1">
@@ -187,7 +184,7 @@ export const QuoteSettingsDialog: React.FC<{
             </div>
           </div>
 
-          {formData.serviceType === 'WOOD_POWERWASHING' ? (
+          {formData.serviceType === 'WOOD_POWERWASHING' && (
             <>
               <div>
                 <label className="block text-sm font-medium text-gray-700">Area Minutes</label>
@@ -198,7 +195,6 @@ export const QuoteSettingsDialog: React.FC<{
                   onBlur={() => handleBlur('areaMinutes')}
                   className={getInputClassName('areaMinutes')}
                   required
-                  min="0"
                 />
                 {touched.areaMinutes && errors.areaMinutes && (
                   <p className="mt-1 text-sm text-red-600">{errors.areaMinutes}</p>
@@ -213,7 +209,6 @@ export const QuoteSettingsDialog: React.FC<{
                   onBlur={() => handleBlur('stairsMinutes')}
                   className={getInputClassName('stairsMinutes')}
                   required
-                  min="0"
                 />
                 {touched.stairsMinutes && errors.stairsMinutes && (
                   <p className="mt-1 text-sm text-red-600">{errors.stairsMinutes}</p>
@@ -228,7 +223,6 @@ export const QuoteSettingsDialog: React.FC<{
                   onBlur={() => handleBlur('postsMinutes')}
                   className={getInputClassName('postsMinutes')}
                   required
-                  min="0"
                 />
                 {touched.postsMinutes && errors.postsMinutes && (
                   <p className="mt-1 text-sm text-red-600">{errors.postsMinutes}</p>
@@ -243,7 +237,6 @@ export const QuoteSettingsDialog: React.FC<{
                   onBlur={() => handleBlur('railingMinutes')}
                   className={getInputClassName('railingMinutes')}
                   required
-                  min="0"
                 />
                 {touched.railingMinutes && errors.railingMinutes && (
                   <p className="mt-1 text-sm text-red-600">{errors.railingMinutes}</p>
@@ -258,65 +251,58 @@ export const QuoteSettingsDialog: React.FC<{
                   onBlur={() => handleBlur('spindlesMinutes')}
                   className={getInputClassName('spindlesMinutes')}
                   required
-                  min="0"
                 />
                 {touched.spindlesMinutes && errors.spindlesMinutes && (
                   <p className="mt-1 text-sm text-red-600">{errors.spindlesMinutes}</p>
                 )}
               </div>
             </>
-          ) : (
-            <>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Setup Minutes</label>
-                <input
-                  type="number"
-                  value={formData.setupMinutes}
-                  onChange={(e) => handleChange('setupMinutes', e.target.value)}
-                  onBlur={() => handleBlur('setupMinutes')}
-                  className={getInputClassName('setupMinutes')}
-                  required
-                  min="0"
-                />
-                {touched.setupMinutes && errors.setupMinutes && (
-                  <p className="mt-1 text-sm text-red-600">{errors.setupMinutes}</p>
-                )}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Per Unit Minutes</label>
-                <input
-                  type="number"
-                  step="any"
-                  value={formData.perUnitMinutes}
-                  onChange={(e) => handleChange('perUnitMinutes', e.target.value)}
-                  onBlur={() => handleBlur('perUnitMinutes')}
-                  className={getInputClassName('perUnitMinutes')}
-                  required
-                  min="0"
-                />
-                {touched.perUnitMinutes && errors.perUnitMinutes && (
-                  <p className="mt-1 text-sm text-red-600">{errors.perUnitMinutes}</p>
-                )}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Hourly Crew Charge
-                </label>
-                <input
-                  type="number"
-                  value={formData.hourlyCrewCharge}
-                  onChange={(e) => handleChange('hourlyCrewCharge', e.target.value)}
-                  onBlur={() => handleBlur('hourlyCrewCharge')}
-                  className={getInputClassName('hourlyCrewCharge')}
-                  required
-                  min="0"
-                />
-                {touched.hourlyCrewCharge && errors.hourlyCrewCharge && (
-                  <p className="mt-1 text-sm text-red-600">{errors.hourlyCrewCharge}</p>
-                )}
-              </div>
-            </>
           )}
+          <>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Setup Minutes</label>
+              <input
+                type="number"
+                value={formData.setupMinutes}
+                onChange={(e) => handleChange('setupMinutes', e.target.value)}
+                onBlur={() => handleBlur('setupMinutes')}
+                className={getInputClassName('setupMinutes')}
+                required
+              />
+              {touched.setupMinutes && errors.setupMinutes && (
+                <p className="mt-1 text-sm text-red-600">{errors.setupMinutes}</p>
+              )}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Per Unit Minutes</label>
+              <input
+                type="number"
+                step="any"
+                value={formData.perUnitMinutes}
+                onChange={(e) => handleChange('perUnitMinutes', e.target.value)}
+                onBlur={() => handleBlur('perUnitMinutes')}
+                className={getInputClassName('perUnitMinutes')}
+                required
+              />
+              {touched.perUnitMinutes && errors.perUnitMinutes && (
+                <p className="mt-1 text-sm text-red-600">{errors.perUnitMinutes}</p>
+              )}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Hourly Crew Charge</label>
+              <input
+                type="number"
+                value={formData.hourlyCrewCharge}
+                onChange={(e) => handleChange('hourlyCrewCharge', e.target.value)}
+                onBlur={() => handleBlur('hourlyCrewCharge')}
+                className={getInputClassName('hourlyCrewCharge')}
+                required
+              />
+              {touched.hourlyCrewCharge && errors.hourlyCrewCharge && (
+                <p className="mt-1 text-sm text-red-600">{errors.hourlyCrewCharge}</p>
+              )}
+            </div>
+          </>
           {/* crew size */}
           <div>
             <label className="block text-sm font-medium text-gray-700">Crew Size</label>
@@ -327,7 +313,6 @@ export const QuoteSettingsDialog: React.FC<{
               onBlur={() => handleBlur('crewSize')}
               className={getInputClassName('crewSize')}
               required
-              min="0"
             />
             {touched.crewSize && errors.crewSize && (
               <p className="mt-1 text-sm text-red-600">{errors.crewSize}</p>

@@ -117,6 +117,8 @@ export interface CalculationRow {
   numberOfPosts?: number;
   railingLengthFeet?: number;
   numberOfSpindles?: number;
+  description?: string;
+  crewSize?: number;
 }
 
 export interface Quote {
